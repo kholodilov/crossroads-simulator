@@ -5,7 +5,8 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [compojure "1.1.6"]
+                 [http-kit "2.1.13"]
+                 [javax.servlet/servlet-api "2.5"]
                  [sonian/carica "1.1.0" :exclusions [[cheshire]]]
                  [fogus/ring-edn "0.2.0"]]
-  :plugins [[lein-ring "0.8.10"]]
-  :ring {:handler service.core/app})
+  :main service.core)

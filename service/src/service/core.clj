@@ -4,7 +4,8 @@
   (:use compojure.core
         compojure.handler
         ring.middleware.edn
-        carica.core))
+        carica.core
+        [org.httpkit.server :only [run-server]]))
 
 (defn response [data & [status]]
   {:status (or status 200)
@@ -26,7 +27,8 @@
   (route/files "/" {:root (config :external-resources)})
   (route/not-found "Not found!"))
 
-(def app
+(defn -main [& args]
   (-> compojure-handler
       site
-      wrap-edn-params))
+      wrap-edn-params
+      (run-server {:port 3000})))
