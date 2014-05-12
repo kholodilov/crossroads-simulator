@@ -1,34 +1,55 @@
 (ns service.core
   (:require [compojure.route :as route]
-            [clojure.java.io :as io])
+            [clojure.java.io :as io]
+            [org.httpkit.server :as http-kit]
+            [ring.middleware.reload :refer (wrap-reload)]
+            [ring.middleware.edn :refer (wrap-edn-params)])
   (:use compojure.core
         compojure.handler
-        ring.middleware.edn
-        carica.core
-        [org.httpkit.server :only [run-server]]))
+        carica.core))
 
 (defn response [data & [status]]
   {:status (or status 200)
    :headers {"Content-Type" "application/edn"}
    :body (pr-str data)})
 
-(def counter (ref 0))
+(def counter (atom 0))
+
+(defn inc-counter-loop []
+  (Thread/sleep 1000)
+  (swap! counter inc)
+  (recur))
+
+(defn counter-websocket-handler [request]
+  (http-kit/with-channel request channel
+    (if (http-kit/websocket? channel)
+      (println "WebSocket channel")
+      (println "HTTP channel"))
+    (http-kit/on-close channel
+      (fn [status]
+        (remove-watch counter channel)
+        (println "channel closed")))
+    (http-kit/on-receive channel (fn [data]))
+    (add-watch counter channel
+      (fn [_channel _counter old-cnt new-cnt]
+        (http-kit/send! channel (str new-cnt))))
+))
 
 (defroutes compojure-handler
   (GET "/" [] (slurp (io/resource "public/html/index.html")))
   (GET "/req" request (str request))
-  (GET "/counter" request (str
-    (dosync
-      (let [current @counter]
-        (alter counter inc)
-        (response current)
-      ))))
+  (GET "/counter" request
+    (swap! counter inc)
+    (str (response @counter)))
+  (GET "/counter-ws" [] counter-websocket-handler)
   (route/resources "/")
   (route/files "/" {:root (config :external-resources)})
   (route/not-found "Not found!"))
 
 (defn -main [& args]
+  (future (inc-counter-loop))
   (-> compojure-handler
       site
       wrap-edn-params
-      (run-server {:port 3000})))
+      wrap-reload
+      (http-kit/run-server {:port 3000})))

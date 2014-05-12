@@ -3,11 +3,16 @@
             [ajax.core :refer [GET POST]])
   (:require-macros [enfocus.macros :as em]))
 
-(defn display-counter [data]
-  (ef/at "body" (ef/content (:body data))))
+(defn display-counter [counter]
+  (ef/at "body" (ef/content counter)))
 
-(defn error-handler [{:keys [status status-text]}]
-  (.log js/console (str "Something bad happened: " status " " status-text)))
+(def ws (js-obj))
+
+(defn init-websocket [ws-url]
+  (set! ws (js/WebSocket. ws-url))
+  (set! (.-onopen ws) (fn [] (.log js/console "Connection opened...")))
+  (set! (.-onclose ws) (fn [] (.log js/console "Connection closed...")))
+  (set! (.-onmessage ws) (fn [message] (display-counter (.-data message)))))
 
 (defn get-counter []
   (GET "/counter"
@@ -18,7 +23,7 @@
 
 (defn start []
   (ef/at "body" (ef/content "Hello world!111"))
-  (get-counter))
+  (init-websocket "ws://localhost:3000/counter-ws"))
 
 
 ;; (set! (.-onload js/window) start)

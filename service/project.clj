@@ -6,6 +6,8 @@
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [compojure "1.1.6"]
                  [http-kit "2.1.13"]
+                 [ring/ring-core "1.2.2"]
+                 [ring/ring-devel "1.2.2"]
                  [javax.servlet/servlet-api "2.5"]
                  [sonian/carica "1.1.0" :exclusions [[cheshire]]]
                  [fogus/ring-edn "0.2.0"]]
