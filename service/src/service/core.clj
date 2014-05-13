@@ -35,7 +35,11 @@
     (http-kit/on-receive channel (fn [data]))
     (add-watch counter channel
       (fn [_channel _counter old-cnt new-cnt]
-        (http-kit/send! channel (str new-cnt))))
+        (http-kit/send! channel
+          (pr-str
+            {:x (rand-int width)
+             :y (rand-int height)
+             :value new-cnt}))))
 ))
 
 (defroutes compojure-handler
@@ -43,7 +47,7 @@
   (GET "/size" [] (response {:width width :height height}))
   (GET "/counter" request
     (swap! counter inc)
-    (str (response @counter)))
+    (response @counter))
   (GET "/counter-ws" [] counter-websocket-handler)
   (route/resources "/")
   (route/files "/" {:root (config :external-resources)})
