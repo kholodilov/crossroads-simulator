@@ -20,6 +20,9 @@
   (swap! counter inc)
   (recur))
 
+(def width 5)
+(def height 4)
+
 (defn counter-websocket-handler [request]
   (http-kit/with-channel request channel
     (if (http-kit/websocket? channel)
@@ -37,7 +40,7 @@
 
 (defroutes compojure-handler
   (GET "/" [] (slurp (io/resource "public/html/index.html")))
-  (GET "/req" request (str request))
+  (GET "/size" [] (response {:width width :height height}))
   (GET "/counter" request
     (swap! counter inc)
     (str (response @counter)))

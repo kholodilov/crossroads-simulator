@@ -14,15 +14,18 @@
   (set! (.-onclose ws) (fn [] (.log js/console "Connection closed...")))
   (set! (.-onmessage ws) (fn [message] (display-counter (.-data message)))))
 
-(defn get-counter []
-  (GET "/counter"
-        {:handler display-counter
-         :error-handler error-handler
-         :finally #(js/setTimeout get-counter 1000)
-         :timeout 30000}))
+(defn setup-crossroads-table []
+  (GET "/size" {:handler
+    (fn [{:keys [width height]}]
+      (ef/at "#crossroads tr td"
+        (em/clone-for [i (range width)]))
+      (ef/at "#crossroads tr"
+        (em/clone-for [i (range height)])))
+    }))
 
 (defn start []
-  (init-websocket "ws://localhost:3000/counter-ws"))
+  (setup-crossroads-table))
+  ;(init-websocket "ws://localhost:3000/counter-ws"))
 
 (set! (.-onload js/window) #(em/wait-for-load (start)))
 
