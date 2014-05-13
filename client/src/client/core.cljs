@@ -4,7 +4,7 @@
   (:require-macros [enfocus.macros :as em]))
 
 (defn display-counter [counter]
-  (ef/at "body" (ef/content counter)))
+  (ef/at "#crossroads tr td" (ef/content counter)))
 
 (def ws (js-obj))
 
@@ -22,10 +22,7 @@
          :timeout 30000}))
 
 (defn start []
-  (ef/at "body" (ef/content "Hello world!111"))
   (init-websocket "ws://localhost:3000/counter-ws"))
 
-
-;; (set! (.-onload js/window) start)
 (set! (.-onload js/window) #(em/wait-for-load (start)))
 
