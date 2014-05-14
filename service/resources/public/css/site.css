@@ -5,4 +5,13 @@
 
 .ccol {
   border: 1px solid black;
+
+  color: yellow;
+  font-weight: bolder;
+  text-align: center;
+
+  background-image: url(/img/crossroads.png);
+  /*background-size: contain;*/
+  width: 228px;
+  height: 190px;
 }
