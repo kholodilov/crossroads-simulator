@@ -5,7 +5,7 @@
 
 (defn display-counter [x y counter]
   (ef/at
-    (str "#crossroads tr:nth-child(" (+ y 1) ") td:nth-child(" (+ x 1) ")")
+    (str ".crossroads .crow:nth-child(" (+ y 1) ") .ccol:nth-child(" (+ x 1) ")")
       (ef/content (str counter))))
 
 (def ws (js-obj))
@@ -25,9 +25,9 @@
 (defn setup-crossroads-table []
   (GET "/size" {:handler
     (fn [{:keys [width height]}]
-      (ef/at "#crossroads tr td"
+      (ef/at ".crossroads .crow .ccol"
         (em/clone-for [i (range width)]))
-      (ef/at "#crossroads tr"
+      (ef/at ".crossroads .crow"
         (em/clone-for [i (range height)])))
     }))
 
