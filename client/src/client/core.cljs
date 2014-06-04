@@ -3,10 +3,10 @@
             [ajax.core :refer [GET POST]])
   (:require-macros [enfocus.macros :as em]))
 
-(defn display-counter [x y counter]
+(defn display-value [x y value]
   (ef/at
     (str ".crossroads .crow:nth-child(" (+ y 1) ") .ccol:nth-child(" (+ x 1) ")")
-      (ef/content (str counter))))
+      (ef/content (str value))))
 
 (def ws (js-obj))
 
@@ -17,10 +17,10 @@
   (set! (.-onmessage ws)
     (fn [message]
       (let [data (cljs.reader/read-string (.-data message))
-            counter (:value data)
+            value (:value data)
             x (:x data)
             y (:y data)]
-        (display-counter x y counter)))))
+        (display-value x y value)))))
 
 (defn setup-crossroads-table []
   (GET "/size" {:handler
@@ -33,7 +33,7 @@
 
 (defn start []
   (setup-crossroads-table)
-  (init-websocket "ws://localhost:3000/counter-ws"))
+  (init-websocket "ws://localhost:3000/events-ws"))
 
 (set! (.-onload js/window) #(em/wait-for-load (start)))
 

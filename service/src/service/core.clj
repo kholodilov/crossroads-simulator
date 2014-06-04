@@ -3,7 +3,8 @@
             [clojure.java.io :as io]
             [org.httpkit.server :as http-kit]
             [ring.middleware.reload :refer (wrap-reload)]
-            [ring.middleware.edn :refer (wrap-edn-params)])
+            [ring.middleware.edn :refer (wrap-edn-params)]
+            [service.esper :as esper])
   (:use compojure.core
         compojure.handler
         carica.core))
@@ -13,48 +14,66 @@
    :headers {"Content-Type" "application/edn"}
    :body (pr-str data)})
 
-(def counter (atom 0))
-
-(defn inc-counter-loop []
-  (Thread/sleep 1000)
-  (swap! counter inc)
-  (recur))
-
 (def width 5)
 (def height 4)
+(def max-wait 30)
 
-(defn counter-websocket-handler [request]
+(def switch-event
+  (esper/new-event "Switch"
+    {"x" :int
+     "y" :int
+     "t" :int}))
+
+(def esp-service (esper/create-service "CrossroadsSimulator"
+                   (esper/configuration switch-event)))
+
+(defn send-event
+  [service event event-type]
+  (.sendEvent (.getEPRuntime service) event event-type))
+
+(defn switch-loop [x y t]
+  (Thread/sleep (* t 1000))
+  (let [new-t (rand-int max-wait)]
+    (send-event esp-service
+      {"x" x "y" y "t" new-t} "Switch")
+      (recur x y new-t)))
+
+(defn start-simulation [width height]
+  (doseq [x (range width) y (range height)]
+    (future (switch-loop x y (rand-int max-wait)))))
+
+(defn events-websocket-handler [request]
   (http-kit/with-channel request channel
-    (if (http-kit/websocket? channel)
-      (println "WebSocket channel")
-      (println "HTTP channel"))
+    (println "channel opened")
+    (http-kit/on-receive channel (fn [data]))
+
+    (def stmt (esper/new-statement esp-service "select * from Switch"))
+
     (http-kit/on-close channel
       (fn [status]
-        (remove-watch counter channel)
+        (esper/destroy-statement stmt)
         (println "channel closed")))
-    (http-kit/on-receive channel (fn [data]))
-    (add-watch counter channel
-      (fn [_channel _counter old-cnt new-cnt]
+
+    (defn switch-listener [new-events]
+      (let [event (first new-events)
+            [x y t] (map #(.get event %) ["x" "y" "t"])]
+        (println (str x " " y " " t))
         (http-kit/send! channel
-          (pr-str
-            {:x (rand-int width)
-             :y (rand-int height)
-             :value new-cnt}))))
+          (pr-str {:x x :y y :value t}))))
+
+    (esper/add-listener stmt (esper/create-listener switch-listener))
 ))
 
 (defroutes compojure-handler
   (GET "/" [] (slurp (io/resource "public/html/index.html")))
   (GET "/size" [] (response {:width width :height height}))
-  (GET "/counter" request
-    (swap! counter inc)
-    (response @counter))
-  (GET "/counter-ws" [] counter-websocket-handler)
+  (GET "/events-ws" [] events-websocket-handler)
   (route/resources "/")
   (route/files "/" {:root (config :external-resources)})
   (route/not-found "Not found!"))
 
 (defn -main [& args]
-  (future (inc-counter-loop))
+  (start-simulation width height)
   (-> compojure-handler
       site
       wrap-edn-params
