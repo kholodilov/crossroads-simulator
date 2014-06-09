@@ -43,26 +43,25 @@
     (future (switch-loop x y (rand-int max-wait)))))
 
 (defn events-websocket-handler [request]
-  (http-kit/with-channel request channel
-    (println "channel opened")
-    (http-kit/on-receive channel (fn [data]))
+  (let [stmt (esper/new-statement esp-service "select * from Switch")]
+    (http-kit/with-channel request channel
+      (println "channel opened")
+      (http-kit/on-receive channel (fn [data]))
 
-    (def stmt (esper/new-statement esp-service "select * from Switch"))
+      (http-kit/on-close channel
+        (fn [status]
+          (esper/destroy-statement stmt)
+          (println "channel closed")))
 
-    (http-kit/on-close channel
-      (fn [status]
-        (esper/destroy-statement stmt)
-        (println "channel closed")))
+      (defn switch-listener [new-events]
+        (let [event (first new-events)
+              [x y t] (map #(.get event %) ["x" "y" "t"])]
+          (println (str x " " y " " t))
+          (http-kit/send! channel
+            (pr-str {:x x :y y :value t}))))
 
-    (defn switch-listener [new-events]
-      (let [event (first new-events)
-            [x y t] (map #(.get event %) ["x" "y" "t"])]
-        (println (str x " " y " " t))
-        (http-kit/send! channel
-          (pr-str {:x x :y y :value t}))))
-
-    (esper/add-listener stmt (esper/create-listener switch-listener))
-))
+      (esper/add-listener stmt (esper/create-listener switch-listener))
+    )))
 
 (defroutes compojure-handler
   (GET "/" [] (slurp (io/resource "public/html/index.html")))
