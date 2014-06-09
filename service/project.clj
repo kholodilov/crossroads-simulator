@@ -12,5 +12,6 @@
                  [javax.servlet/servlet-api "2.5"]
                  [sonian/carica "1.1.0" :exclusions [[cheshire]]]
                  [fogus/ring-edn "0.2.0"]
-                 [com.espertech/esper "5.0.0" :exclusions [log4j]]]
+                 [com.espertech/esper "5.0.0" :exclusions [log4j]]
+                 [clj-esper "1.0.1"]]
   :main service.core)

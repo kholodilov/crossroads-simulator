@@ -4,64 +4,63 @@
             [org.httpkit.server :as http-kit]
             [ring.middleware.reload :refer (wrap-reload)]
             [ring.middleware.edn :refer (wrap-edn-params)]
-            [service.esper :as esper])
+            [clj-esper.core :as esper])
+  (:use [clojure.walk :only (stringify-keys)])
   (:use compojure.core
         compojure.handler
         carica.core))
-
-(defn response [data & [status]]
-  {:status (or status 200)
-   :headers {"Content-Type" "application/edn"}
-   :body (pr-str data)})
 
 (def width 5)
 (def height 4)
 (def max-wait 30)
 
-(def switch-event
-  (esper/new-event "Switch"
-    {"x" :int
-     "y" :int
-     "t" :int}))
+(esper/defevent SwitchEvent [x :int y :int t :int])
 
 (def esp-service (esper/create-service "CrossroadsSimulator"
-                   (esper/configuration switch-event)))
+                   (esper/create-configuration [SwitchEvent])))
 
 (defn send-event
-  [service event event-type]
-  (.sendEvent (.getEPRuntime service) event event-type))
+  [service event]
+  (let [event-type (esper/event-name (meta event))
+        event-data (stringify-keys event)]
+    (esper/send-event service event-data event-type)))
 
 (defn switch-loop [x y t]
   (Thread/sleep (* t 1000))
   (let [new-t (rand-int max-wait)]
     (send-event esp-service
-      {"x" x "y" y "t" new-t} "Switch")
-      (recur x y new-t)))
+      (esper/new-event SwitchEvent :x x :y y :t new-t))
+    (recur x y new-t)))
 
 (defn start-simulation [width height]
   (doseq [x (range width) y (range height)]
     (future (switch-loop x y (rand-int max-wait)))))
 
 (defn events-websocket-handler [request]
-  (let [stmt (esper/new-statement esp-service "select * from Switch")]
+  (let [stmt (esper/create-statement esp-service "select * from SwitchEvent")]
     (http-kit/with-channel request channel
       (println "channel opened")
       (http-kit/on-receive channel (fn [data]))
 
       (http-kit/on-close channel
         (fn [status]
-          (esper/destroy-statement stmt)
+          (.destroy stmt)
           (println "channel closed")))
 
-      (defn switch-listener [new-events]
-        (let [event (first new-events)
+      (defn switch-listener [& events]
+        (let [event (first events)
               [x y t] (map #(.get event %) ["x" "y" "t"])]
           (println (str x " " y " " t))
           (http-kit/send! channel
             (pr-str {:x x :y y :value t}))))
 
-      (esper/add-listener stmt (esper/create-listener switch-listener))
+      (esper/attach-listener stmt (esper/create-listener switch-listener))
     )))
+
+(defn response [data & [status]]
+  {:status (or status 200)
+   :headers {"Content-Type" "application/edn"}
+   :body (pr-str data)})
 
 (defroutes compojure-handler
   (GET "/" [] (slurp (io/resource "public/html/index.html")))
