@@ -5,7 +5,6 @@
             [ring.middleware.reload :refer (wrap-reload)]
             [ring.middleware.edn :refer (wrap-edn-params)]
             [clj-esper.core :as esper])
-  (:use [clojure.walk :only (stringify-keys)])
   (:use compojure.core
         compojure.handler
         carica.core))
@@ -19,16 +18,10 @@
 (def esp-service (esper/create-service "CrossroadsSimulator"
                    (esper/create-configuration [SwitchEvent])))
 
-(defn send-event
-  [service event]
-  (let [event-type (esper/event-name (meta event))
-        event-data (stringify-keys event)]
-    (esper/send-event service event-data event-type)))
-
 (defn switch-loop [x y t]
   (Thread/sleep (* t 1000))
   (let [new-t (rand-int max-wait)]
-    (send-event esp-service
+    (esper/trigger-event esp-service
       (esper/new-event SwitchEvent :x x :y y :t new-t))
     (recur x y new-t)))
 
