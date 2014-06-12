@@ -3,10 +3,10 @@
             [ajax.core :refer [GET POST]])
   (:require-macros [enfocus.macros :as em]))
 
-(defn display-value [x y value]
+(defn display-switch-time [x y t]
   (ef/at
     (str ".crossroads .crow:nth-child(" (+ y 1) ") .ccol:nth-child(" (+ x 1) ")")
-      (ef/content (str value))))
+      (ef/content (str t))))
 
 (def ws (js-obj))
 
@@ -17,10 +17,8 @@
   (set! (.-onmessage ws)
     (fn [message]
       (let [data (cljs.reader/read-string (.-data message))
-            value (:value data)
-            x (:x data)
-            y (:y data)]
-        (display-value x y value)))))
+            {:keys [x y t]} data]
+        (display-switch-time x y t)))))
 
 (defn setup-crossroads-table []
   (GET "/size" {:handler

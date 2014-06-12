@@ -41,11 +41,9 @@
           (println "channel closed")))
 
       (defn switch-listener [& events]
-        (let [event (first events)
-              [x y t] (map #(.get event %) ["x" "y" "t"])]
-          (println (str x " " y " " t))
-          (http-kit/send! channel
-            (pr-str {:x x :y y :value t}))))
+        (doseq [event events]
+          (println (sort event))
+          (http-kit/send! channel (pr-str event))))
 
       (esper/attach-listener stmt (esper/create-listener switch-listener))
     )))
