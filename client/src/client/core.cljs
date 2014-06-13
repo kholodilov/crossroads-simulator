@@ -22,12 +22,14 @@
 
 (defn setup-crossroads-table []
   (GET "/state" {:handler
-    (fn [{:keys [width height]}]
+    (fn [{:keys [width height switch-times]}]
       (ef/at ".crossroads .crow .ccol"
         (em/clone-for [i (range width)]))
       (ef/at ".crossroads .crow"
-        (em/clone-for [i (range height)])))
-    }))
+        (em/clone-for [i (range height)]))
+      (doseq [y (range height) x (range width)]
+        (display-switch-time x y (get-in switch-times [y x])))
+    )}))
 
 (defn start []
   (setup-crossroads-table)
