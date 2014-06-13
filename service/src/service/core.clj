@@ -1,13 +1,7 @@
 (ns service.core
-  (:require [compojure.route :as route]
-            [clojure.java.io :as io]
-            [org.httpkit.server :as http-kit]
-            [ring.middleware.reload :refer (wrap-reload)]
-            [ring.middleware.edn :refer (wrap-edn-params)]
-            [clj-esper.core :as esper])
-  (:use compojure.core
-        compojure.handler
-        carica.core))
+  (:require [org.httpkit.server :as http-kit]
+            [clj-esper.core :as esper]
+            [service.web :refer (start-web-service)]))
 
 (def width 5)
 (def height 4)
@@ -27,9 +21,12 @@
 
 (defn start-simulation [width height]
   (doseq [x (range width) y (range height)]
-    (future (switch-loop x y (rand-int max-wait)))))
+    (.start (Thread. #(switch-loop x y 0)))))
 
-(defn events-websocket-handler [request]
+(defn current-state-handler []
+  {:width width :height height})
+
+(defn events-handler [request]
   (let [stmt (esper/create-statement esp-service "select * from SwitchEvent")]
     (http-kit/with-channel request channel
       (println "channel opened")
@@ -48,23 +45,8 @@
       (esper/attach-listener stmt (esper/create-listener switch-listener))
     )))
 
-(defn response [data & [status]]
-  {:status (or status 200)
-   :headers {"Content-Type" "application/edn"}
-   :body (pr-str data)})
-
-(defroutes compojure-handler
-  (GET "/" [] (slurp (io/resource "public/html/index.html")))
-  (GET "/size" [] (response {:width width :height height}))
-  (GET "/events-ws" [] events-websocket-handler)
-  (route/resources "/")
-  (route/files "/" {:root (config :external-resources)})
-  (route/not-found "Not found!"))
-
 (defn -main [& args]
   (start-simulation width height)
-  (-> compojure-handler
-      site
-      wrap-edn-params
-      wrap-reload
-      (http-kit/run-server {:port 3000})))
+  (start-web-service {:port 3000}
+    current-state-handler
+    events-handler))

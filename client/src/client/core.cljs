@@ -21,7 +21,7 @@
         (display-switch-time x y t)))))
 
 (defn setup-crossroads-table []
-  (GET "/size" {:handler
+  (GET "/state" {:handler
     (fn [{:keys [width height]}]
       (ef/at ".crossroads .crow .ccol"
         (em/clone-for [i (range width)]))
@@ -31,7 +31,7 @@
 
 (defn start []
   (setup-crossroads-table)
-  (init-websocket "ws://localhost:3000/events-ws"))
+  (init-websocket "ws://localhost:3000/events"))
 
 (set! (.-onload js/window) #(em/wait-for-load (start)))
 
