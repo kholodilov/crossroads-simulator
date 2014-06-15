@@ -20,12 +20,9 @@
   (doseq [x (range width) y (range height)]
     (.start (Thread. #(switch-loop esp-service x y 0)))))
 
-(defn current-state-handler []
-  {:width width :height height
-   :switch-times
-    (vec (for [y (range height)] 
-      (vec (for [x (range width)] 0))))
-  })
+(defn current-state-handler [last-switch-events-stmt]
+    {:width width :height height
+     :switch-times (esp/pull-events last-switch-events-stmt)})
 
 (defn events-handler [esp-service request]
   (let [stmt (esp/create-statement esp-service "select * from SwitchEvent")]
@@ -48,8 +45,9 @@
 
 (defn -main [& args]
   (let [esp-conf (esp/create-configuration [SwitchEvent])
-        esp-service (esp/create-service "CrossroadsSimulator" esp-conf)]
+        esp-service (esp/create-service "CrossroadsSimulator" esp-conf)
+        last-switch-events-stmt (esp/create-statement esp-service "select * from SwitchEvent.std:unique(x,y)")]
     (start-simulation esp-service width height)
     (start-web-service {:port 3000}
-      current-state-handler
+      (partial current-state-handler last-switch-events-stmt)
       (partial events-handler esp-service))))

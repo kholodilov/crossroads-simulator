@@ -27,8 +27,8 @@
         (em/clone-for [i (range width)]))
       (ef/at ".crossroads .crow"
         (em/clone-for [i (range height)]))
-      (doseq [y (range height) x (range width)]
-        (display-switch-time x y (get-in switch-times [y x])))
+      (doseq [{:keys [x y t]} switch-times]
+        (display-switch-time x y t))
     )}))
 
 (defn start []
