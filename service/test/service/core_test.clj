@@ -2,6 +2,7 @@
   (:require [clojure.test :refer :all]
             [service.core :refer :all]))
 
-(deftest a-test
-  (testing "stub"
-    (is (= 1 1))))
+(deftest states-test
+  (is (= "ns" (flip-state "we")))
+  (is (= "we" (flip-state "ns")))
+  )

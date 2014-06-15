@@ -10,8 +10,16 @@
   font-weight: bolder;
   text-align: center;
 
-  background-image: url(/img/crossroads.png);
+  /*background-image: url(/img/crossroads.png);*/
   /*background-size: contain;*/
   width: 228px;
   height: 190px;
+}
+
+.ns {
+  background-image: url(/img/crossroads-ns.png);
+}
+
+.we {
+  background-image: url(/img/crossroads-we.png);
 }

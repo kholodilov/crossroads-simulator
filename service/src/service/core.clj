@@ -6,21 +6,26 @@
 (def width 5)
 (def height 4)
 (def max-wait 30)
+(def states ["ns" "we"])
 
-(esp/defevent SwitchEvent [x :int y :int t :int])
+(defn rand-state [] (rand-nth states))
+(defn flip-state [state]
+  (first (clojure.set/difference (set states) (list state))))
 
-(defn switch-loop [esp-service x y t]
+(esp/defevent SwitchEvent [x :int y :int t :int state :string])
+
+(defn switch-loop [esp-service x y t state]
   (if (> t 0)
     (do
       (esp/trigger-event esp-service
-        (esp/new-event SwitchEvent :x x :y y :t t))
+        (esp/new-event SwitchEvent :x x :y y :t t :state state))
       (Thread/sleep 1000)
-      (recur esp-service x y (dec t)))
-    (recur esp-service x y (rand-int max-wait))))
+      (recur esp-service x y (dec t) state))
+    (recur esp-service x y (rand-int max-wait) (flip-state state))))
 
 (defn start-simulation [esp-service width height]
   (doseq [x (range width) y (range height)]
-    (.start (Thread. #(switch-loop esp-service x y 0)))))
+    (.start (Thread. #(switch-loop esp-service x y 0 (rand-state))))))
 
 (defn current-state-handler [last-switch-events-stmt]
   {:width width :height height
