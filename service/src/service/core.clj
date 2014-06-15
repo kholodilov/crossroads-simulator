@@ -10,11 +10,13 @@
 (esp/defevent SwitchEvent [x :int y :int t :int])
 
 (defn switch-loop [esp-service x y t]
-  (Thread/sleep (* t 1000))
-  (let [new-t (rand-int max-wait)]
-    (esp/trigger-event esp-service
-      (esp/new-event SwitchEvent :x x :y y :t new-t))
-    (recur esp-service x y new-t)))
+  (if (> t 0)
+    (do
+      (esp/trigger-event esp-service
+        (esp/new-event SwitchEvent :x x :y y :t t))
+      (Thread/sleep 1000)
+      (recur esp-service x y (dec t)))
+    (recur esp-service x y (rand-int max-wait))))
 
 (defn start-simulation [esp-service width height]
   (doseq [x (range width) y (range height)]
@@ -26,7 +28,6 @@
 
 (defn switch-events-broadcast-fn [channel & events]
   (doseq [event events]
-    (println (sort event))
     (http-kit/send! channel (pr-str event))))
 
 (defn events-handler [switch-events-stmt request]
