@@ -35,8 +35,9 @@
     )}))
 
 (defn start []
-  (setup-crossroads-table)
-  (init-websocket "ws://localhost:3000/events"))
+  (em/wait-for-load
+    (setup-crossroads-table)
+    (init-websocket "ws://localhost:3000/events")))
 
-(set! (.-onload js/window) #(em/wait-for-load (start)))
+;(set! (.-onload js/window) #(em/wait-for-load (start)))
 
