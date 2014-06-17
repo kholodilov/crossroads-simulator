@@ -3,8 +3,8 @@
             [clj-esper.core :as esp]
             [service.web :refer (start-web-service)]))
 
-(def width 5)
-(def height 4)
+(def width 3)
+(def height 2)
 (def max-wait 30)
 (def states ["ns" "we"])
 

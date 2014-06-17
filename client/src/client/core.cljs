@@ -1,7 +1,16 @@
 (ns client.core
   (:require [enfocus.core :as ef]
-            [ajax.core :refer [GET POST]])
+            [ajax.core :refer [GET POST]]
+            [jayq.core :as jayq])
   (:require-macros [enfocus.macros :as em]))
+
+(def ws (js-obj))
+
+(defn init-websocket [ws-url handler]
+  (set! ws (js/WebSocket. ws-url))
+  (set! (.-onopen ws) (fn [] (.log js/console "Connection opened...")))
+  (set! (.-onclose ws) (fn [] (.log js/console "Connection closed...")))
+  (set! (.-onmessage ws) handler))
 
 (defn display-switch-crossroads [x y t state]
   (ef/at
@@ -11,17 +20,10 @@
       (ef/set-class "ccol" state))
   ))
 
-(def ws (js-obj))
-
-(defn init-websocket [ws-url]
-  (set! ws (js/WebSocket. ws-url))
-  (set! (.-onopen ws) (fn [] (.log js/console "Connection opened...")))
-  (set! (.-onclose ws) (fn [] (.log js/console "Connection closed...")))
-  (set! (.-onmessage ws)
-    (fn [message]
-      (let [data (cljs.reader/read-string (.-data message))
-            {:keys [x y t state]} data]
-        (display-switch-crossroads x y t state)))))
+(defn crossroads-event-handler [message]
+  (let [data (cljs.reader/read-string (.-data message))
+        {:keys [x y t state]} data]
+    (display-switch-crossroads x y t state)))
 
 (defn setup-crossroads-table []
   (GET "/state" {:handler
@@ -34,10 +36,15 @@
         (display-switch-crossroads x y t state))
     )}))
 
-(defn start []
+(defn display-query-result [query-result]
+  (ef/at ".query-results"
+    (ef/prepend (str "<pre>" query-result "</pre>"))))
+
+(defn StartCrossroadsSimulator []
   (em/wait-for-load
     (setup-crossroads-table)
-    (init-websocket "ws://localhost:3000/events")))
+    (init-websocket "ws://localhost:3000/events" crossroads-event-handler)))
 
-;(set! (.-onload js/window) #(em/wait-for-load (start)))
-
+(defn StartQueryEngine []
+  (em/wait-for-load
+    (init-websocket "ws://localhost:3000/events" #(display-query-result (.-data %)))))
