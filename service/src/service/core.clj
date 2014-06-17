@@ -31,7 +31,7 @@
   {:width width :height height
    :switch-times (esp/pull-events last-switch-events-stmt)})
 
-(defn switch-events-broadcast-fn [channel & events]
+(defn switch-events-broadcast-fn [channel events]
   (doseq [event events]
     (http-kit/send! channel (pr-str event))))
 
