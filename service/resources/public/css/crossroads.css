@@ -23,10 +23,3 @@
 .we {
   background-image: url(/img/crossroads-we.png);
 }
-
-.query-results {
-  color: green;
-  width: 100%;
-  height: 100%;
-  overflow: auto;
-}
