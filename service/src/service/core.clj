@@ -1,10 +1,9 @@
 (ns service.core
   (:require [org.httpkit.server :as http-kit]
             [clj-esper.core :as esp]
-            [service.web :refer (start-web-service)]))
+            [service.web :refer (start-web-service)]
+            [clojure.tools.cli :refer [parse-opts]]))
 
-(def width 3)
-(def height 2)
 (def max-wait 30)
 (def states ["ns" "we"])
 
@@ -27,7 +26,7 @@
   (doseq [x (range width) y (range height)]
     (.start (Thread. #(switch-loop esp-service x y 0 (rand-state))))))
 
-(defn current-state-handler [last-switch-events-stmt]
+(defn current-state-handler [last-switch-events-stmt width height]
   {:width width :height height
    :switch-times (esp/pull-events last-switch-events-stmt)})
 
@@ -49,12 +48,24 @@
           (println "channel closed")))
 )))
 
-(defn -main [& args]
+(defn run [width height]
   (let [esp-conf (esp/create-configuration [SwitchEvent])
         esp-service (esp/create-service "CrossroadsSimulator" esp-conf)
         switch-events-stmt (esp/create-statement esp-service "select * from SwitchEvent")
         last-switch-events-stmt (esp/create-statement esp-service "select * from SwitchEvent.std:unique(x,y)")]
     (start-simulation esp-service width height)
     (start-web-service {:port 3000}
-      (partial current-state-handler last-switch-events-stmt)
+      (partial current-state-handler last-switch-events-stmt width height)
       (partial events-handler switch-events-stmt))))
+
+(def cli-options
+  [["-w" "--width n" "Width"
+    :default 4
+    :parse-fn #(Integer/parseInt %)]
+   ["-h" "--height n" "Height"
+    :default 3
+    :parse-fn #(Integer/parseInt %)]])
+
+(defn -main [& args]
+  (let [{:keys [options]} (parse-opts args cli-options)]
+    (run (options :width) (options :height))))

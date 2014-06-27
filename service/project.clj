@@ -11,5 +11,8 @@
                  [javax.servlet/servlet-api "2.5"]
                  [sonian/carica "1.1.0" :exclusions [[cheshire]]]
                  [fogus/ring-edn "0.2.0"]
-                 [kholodilov/clj-esper "1.0.2-SNAPSHOT"]]
+                 [kholodilov/clj-esper "1.0.2-SNAPSHOT"]
+                 [org.clojure/tools.cli "0.3.1"]]
+  :profiles {:test 
+              {:dependencies [[stylefruits/gniazdo "0.2.1"]]}}
   :main service.core)
