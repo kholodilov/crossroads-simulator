@@ -23,8 +23,11 @@
     (recur esp-service x y (rand-int max-wait) (flip-state state))))
 
 (defn start-simulation [esp-service width height]
-  (doseq [x (range width) y (range height)]
-    (.start (Thread. #(switch-loop esp-service x y 0 (rand-state))))))
+  (let [futures
+          (for [x (range width) y (range height)]
+            (future (switch-loop esp-service x y 0 (rand-state))))]
+    (doall futures)
+    #(doseq [f futures] (future-cancel f))))
 
 (defn current-state-handler [last-switch-events-stmt width height]
   {:width width :height height
@@ -52,11 +55,14 @@
   (let [esp-conf (esp/create-configuration [SwitchEvent])
         esp-service (esp/create-service "CrossroadsSimulator" esp-conf)
         switch-events-stmt (esp/create-statement esp-service "select * from SwitchEvent")
-        last-switch-events-stmt (esp/create-statement esp-service "select * from SwitchEvent.std:unique(x,y)")]
-    (start-simulation esp-service width height)
-    (start-web-service {:port 3000}
-      (partial current-state-handler last-switch-events-stmt width height)
-      (partial events-handler switch-events-stmt))))
+        last-switch-events-stmt (esp/create-statement esp-service "select * from SwitchEvent.std:unique(x,y)")
+        stop-simulation (start-simulation esp-service width height)
+        stop-web-service     
+          (start-web-service {:port 3000}
+            (partial current-state-handler last-switch-events-stmt width height)
+            (partial events-handler switch-events-stmt))]
+    #(do (stop-web-service) (stop-simulation) (.destroy esp-service))
+))
 
 (def cli-options
   [["-w" "--width n" "Width"
