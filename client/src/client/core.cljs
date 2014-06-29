@@ -8,4 +8,5 @@
         (initializer ws)
         (.log js/console "Websocket initialized...")))
     (set! (.-onclose ws) (fn [] (.log js/console "Connection closed...")))
-    (set! (.-onmessage ws) handler)))
+    (set! (.-onmessage ws) handler)
+    ws))
