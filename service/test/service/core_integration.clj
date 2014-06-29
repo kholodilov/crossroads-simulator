@@ -6,16 +6,6 @@
 (defn handler [atom]
   #(swap! atom conj (read-string %)))
 
-(deftest test-events-websocket
-  (let [stop-service (service/run 2 2)
-        events (atom [])
-        events-ws (ws/connect "ws://localhost:3000/events"
-                    :on-receive (handler events))]
-    (Thread/sleep 3000)
-    (ws/close events-ws)
-    (is (= (count @events) 12))
-    (stop-service)))
-
 (deftest test-query-websocket
   (let [stop-service (service/run 2 2)
         query-result (atom [])

@@ -13,12 +13,11 @@
    :headers {"Content-Type" "application/edn"}
    :body (pr-str data)})
 
-(defn start-web-service [server-params state-handler events-handler query-handler]
+(defn start-web-service [server-params state-handler query-handler]
   
   (defroutes compojure-handler
     (GET "/" [] (slurp (io/resource "public/html/index.html")))
     (GET "/state" [] (response (state-handler)))
-    (GET "/events" [] events-handler)
     (GET "/query" [] query-handler)
     (route/resources "/")
     (route/files "/" {:root (config :external-resources)})

@@ -37,20 +37,6 @@
   (doseq [result results]
     (http-kit/send! channel (pr-str result))))
 
-(defn events-handler [switch-events-stmt request]
-  (http-kit/with-channel request channel
-    (let [switch-listener
-          (esp/create-listener (partial query-results-to-channel channel))]
-
-      (println "events: channel opened")
-      (esp/attach-listener switch-events-stmt switch-listener)
-
-      (http-kit/on-close channel
-        (fn [status] 
-          (esp/detach-listener switch-events-stmt switch-listener)
-          (println "events: channel closed")))
-)))
-
 (defn query-handler [esp-service request]
   (http-kit/with-channel request channel
 
@@ -80,13 +66,11 @@
 (defn run [width height]
   (let [esp-conf (esp/create-configuration [SwitchEvent])
         esp-service (esp/create-service "CrossroadsSimulator" esp-conf)
-        switch-events-stmt (esp/create-statement esp-service "select * from SwitchEvent")
         last-switch-events-stmt (esp/create-statement esp-service "select * from SwitchEvent.std:unique(x,y)")
         stop-simulation (start-simulation esp-service width height)
         stop-web-service     
           (start-web-service {:port 3000}
             (partial current-state-handler last-switch-events-stmt width height)
-            (partial events-handler switch-events-stmt)
             (partial query-handler esp-service))]
     #(do (stop-web-service) (stop-simulation) (.destroy esp-service))
 ))
