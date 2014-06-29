@@ -31,5 +31,7 @@
 (defn StartCrossroadsSimulator []
   (em/wait-for-load
     (setup-crossroads-table)
-    (init-websocket "ws://localhost:3000/events" crossroads-event-handler)))
+    (init-websocket "ws://localhost:3000/query"
+      #(.send % "select * from SwitchEvent")
+      crossroads-event-handler)))
 

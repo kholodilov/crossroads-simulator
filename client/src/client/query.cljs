@@ -10,4 +10,4 @@
 
 (defn StartQueryEngine []
   (em/wait-for-load
-    (init-websocket "ws://localhost:3000/events" #(display-query-result (.-data %)))))
+    (init-websocket "ws://localhost:3000/events" #() #(display-query-result (.-data %)))))
