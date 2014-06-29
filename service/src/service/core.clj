@@ -33,23 +33,49 @@
   {:width width :height height
    :switch-times (esp/pull-events last-switch-events-stmt)})
 
-(defn switch-events-broadcast-fn [channel events]
-  (doseq [event events]
-    (http-kit/send! channel (pr-str event))))
+(defn query-results-to-channel [channel results]
+  (doseq [result results]
+    (http-kit/send! channel (pr-str result))))
 
 (defn events-handler [switch-events-stmt request]
   (http-kit/with-channel request channel
     (let [switch-listener
-          (esp/create-listener (partial switch-events-broadcast-fn channel))]
+          (esp/create-listener (partial query-results-to-channel channel))]
 
-      (println "channel opened")
+      (println "events: channel opened")
       (esp/attach-listener switch-events-stmt switch-listener)
 
       (http-kit/on-close channel
         (fn [status] 
           (esp/detach-listener switch-events-stmt switch-listener)
-          (println "channel closed")))
+          (println "events: channel closed")))
 )))
+
+(defn query-handler [esp-service request]
+  (http-kit/with-channel request channel
+
+    (println "query: channel opened")
+
+    (let [listener (esp/create-listener (partial query-results-to-channel channel))
+          cleanup-fn (atom #())]
+      (http-kit/on-receive channel
+        (fn [query]
+          (@cleanup-fn)
+          (println (str "Starting query: " query))
+          (let [stmt (esp/create-statement esp-service query)]
+            (esp/attach-listener stmt listener)
+            (reset! cleanup-fn
+              #(do
+                (println (str "Stopping query: " query))
+                (esp/detach-listener stmt listener)))
+            )))
+
+      (http-kit/on-close channel
+        (fn [status]
+          (@cleanup-fn)
+          (println "query: channel closed")))
+    )
+))
 
 (defn run [width height]
   (let [esp-conf (esp/create-configuration [SwitchEvent])
@@ -60,7 +86,8 @@
         stop-web-service     
           (start-web-service {:port 3000}
             (partial current-state-handler last-switch-events-stmt width height)
-            (partial events-handler switch-events-stmt))]
+            (partial events-handler switch-events-stmt)
+            (partial query-handler esp-service))]
     #(do (stop-web-service) (stop-simulation) (.destroy esp-service))
 ))
 
