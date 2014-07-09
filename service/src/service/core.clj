@@ -13,19 +13,26 @@
 
 (esp/defevent SwitchEvent [x :int y :int t :int state :string])
 
-(defn switch-loop [esp-service x y t state]
+(defn send-event [esp-service event & attrs]
+  (esp/trigger-event esp-service
+    (apply esp/new-event (conj attrs event))))
+
+(defn switch-loop [send-event-fn proceed-fn x y t state]
   (if (> t 0)
     (do
-      (esp/trigger-event esp-service
-        (esp/new-event SwitchEvent :x x :y y :t t :state state))
-      (Thread/sleep 1000)
-      (recur esp-service x y (dec t) state))
-    (recur esp-service x y (rand-int max-wait) (flip-state state))))
+      (send-event-fn SwitchEvent :x x :y y :t t :state state)
+      (when (proceed-fn)
+        (recur send-event-fn proceed-fn x y (dec t) state)))
+    (recur send-event-fn proceed-fn x y (rand-int max-wait) (flip-state state))))
 
 (defn start-simulation [esp-service width height]
   (let [futures
           (for [x (range width) y (range height)]
-            (future (switch-loop esp-service x y 0 (rand-state))))]
+            (future
+              (switch-loop
+                (partial send-event esp-service)
+                (fn [] (Thread/sleep 1000) true)
+                x y 0 (rand-state))))]
     (doall futures)
     #(doseq [f futures] (future-cancel f))))
 
