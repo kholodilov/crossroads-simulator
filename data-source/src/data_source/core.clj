@@ -8,10 +8,11 @@
 (def switch-events-queue "switch-events")
 
 (defn -main [& args]
-  (let [conn (rmq/connect)
+  (let [queue (first args)
+        conn (rmq/connect)
         ch (lch/open conn)]
-    (lq/declare ch switch-events-queue :exclusive false)
-    (lb/publish ch default-exchange switch-events-queue "Hello!")
+    (lq/declare ch queue :exclusive false)
+    (lb/publish ch default-exchange queue "Hello!")
     (rmq/close ch)
     (rmq/close conn)
   ))
