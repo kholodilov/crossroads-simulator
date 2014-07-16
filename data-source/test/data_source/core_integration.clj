@@ -19,6 +19,6 @@
         ch (lch/open conn)]
     (lq/declare ch queue)
     (lc/subscribe ch queue (handler result))
-    (ds/-main queue)
+    (ds/run 0 0 queue)
     (is (= @result "Hello!")))
   (sh "rabbitmqctl" "stop"))
