@@ -7,4 +7,8 @@
                  [org.clojure/tools.cli "0.3.1"]
                  [ruiyun/tools.timer "1.0.1"]
                  [com.novemberain/langohr "2.11.0"]]
-  :main data-source.core)
+  :main data-source.core
+  :test-selectors {
+    :default (fn [m] (not (:integration m)))
+    :itest (fn [m] true)
+  })

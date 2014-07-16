@@ -10,9 +10,9 @@
 (defn handler [atom]
   (fn [ch _ ^bytes payload] (reset! atom (String. payload "UTF-8"))))
 
-(deftest test-switch-events-source
+(deftest ^:integration test-switch-events-source
   (sh "rabbitmq-server" "-detached")
-  (Thread/sleep 3000)
+  (Thread/sleep 4000)
   (let [queue "test-switch-events-source"
         result (atom nil)
         conn (rmq/connect)
