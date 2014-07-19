@@ -12,8 +12,6 @@
     (swap! atom conj (read-string (String. payload "UTF-8")))))
 
 (deftest ^:integration test-switch-events-source
-  (sh "rabbitmq-server" "-detached")
-  (Thread/sleep 4000)
   (let [queue "test-switch-events-source"
         result (atom [])
         conn (rmq/connect)
@@ -23,6 +21,5 @@
         stop-source (ds/run 2 1 queue)]
     (Thread/sleep 2500)
     (stop-source)
-    (sh "rabbitmqctl" "stop")
     (println @result)
     (is (= 6 (count @result)))))

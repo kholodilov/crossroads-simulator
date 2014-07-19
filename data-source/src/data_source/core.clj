@@ -21,7 +21,7 @@
 (defn run [width height queue]
   (let [conn (rmq/connect)
         ch (lch/open conn)
-        _ (lq/declare ch queue :exclusive false)
+        _ (lq/declare ch queue)
         stop-gen (start-switch-events-generator width height 
                     (partial lb/publish ch default-exchange queue))]
     #(do
