@@ -2,28 +2,34 @@
   (:require [clojure.test :refer :all]
             [data-source.gen :refer :all]))
 
-(deftest flip-state-test
-  (is (= "ns" (flip-state "we")))
-  (is (= "we" (flip-state "ns")))
+(deftest flip-direction-test
+  (is (= "ns" (flip-direction "we")))
+  (is (= "we" (flip-direction "ns")))
 )
 
 (deftest next-state-test
-  (is (= [9 "ns"] (next-state 10 "ns")))
-  (is (= [9 "we"] (next-state 10 "we")))
+  (is (= {:x 0 :y 0 :t 9 :direction "ns"} (next-state {:x 0 :y 0 :t 10 :direction "ns"})))
+  (is (= {:t 9 :direction "we"} (next-state {:t 10 :direction "we"})))
   (with-redefs [rand-int (constantly 111)]
-    (is (= [111 "ns"] (next-state 0 "we")))
-    (is (= [111 "we"] (next-state 0 "ns"))))
+    (is (= {:t 111 :direction "ns"} (next-state {:t 0 :direction "we"})))
+    (is (= {:t 111 :direction "we"} (next-state {:t 0 :direction "ns"}))))
 )
 
 (deftest initial-switch-events-test
   (with-redefs [rand-nth (constantly "ns")]
     (is (= 
-      [[0 0 0 "ns"] [0 1 0 "ns"] [1 0 0 "ns"] [1 1 0 "ns"]]
+      [{:x 0 :y 0 :t 0 :direction "ns"}
+       {:x 0 :y 1 :t 0 :direction "ns"}
+       {:x 1 :y 0 :t 0 :direction "ns"}
+       {:x 1 :y 1 :t 0 :direction "ns"}]
       (initial-switch-events 2 2)))
 ))
 
 (deftest next-switch-events-test
   (is (=
-    [[0 0 9 "ns"] [0 1 2 "we"]]
-    (next-switch-events [[0 0 10 "ns"] [0 1 3 "we"]])))
+    [{:x 0 :y 0 :t 9 :direction "ns"}
+     {:x 0 :y 1 :t 2 :direction "we"}]
+    (next-switch-events
+      [{:x 0 :y 0 :t 10 :direction "ns"}
+       {:x 0 :y 1 :t 3  :direction "we"}])))
 )

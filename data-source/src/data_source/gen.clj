@@ -2,21 +2,20 @@
   (:require [clojure.set]))
 
 (def max-wait 30)
-(def states ["ns" "we"])
+(def directions ["ns" "we"])
 
-(defn flip-state [state]
-  (first (clojure.set/difference (set states) (list state))))
+(defn flip-direction [direction]
+  (first (clojure.set/difference (set directions) (list direction))))
 
-(defn next-state [t state]
-  (if (> t 0)
-    [(dec t) state]
-    [(rand-int max-wait) (flip-state state)]))
+(defn next-state [{:keys [t direction] :as state}]
+  (merge state
+    (if (> t 0)
+      {:t (dec t) :direction direction}
+      {:t (rand-int max-wait) :direction (flip-direction direction)})))
 
 (defn initial-switch-events [width height] 
   (for [x (range width) y (range height)]
-    [x y 0 (rand-nth states)]))
+    {:x x :y y :t 0 :direction (rand-nth directions)}))
 
 (defn next-switch-events [switch-events]
-  (map
-    #(apply (fn [x y t state] (vec (concat [x y] (next-state t state)))) %) 
-    switch-events))
+  (map next-state switch-events))
