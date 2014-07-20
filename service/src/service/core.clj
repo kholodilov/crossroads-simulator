@@ -7,10 +7,6 @@
 
 (esp/defevent SwitchEvent [x :int y :int t :int direction :string])
 
-(defn send-event [esp-service event attrs-map]
-  (esp/trigger-event esp-service
-    (apply esp/new-event (flatten [event (vec attrs-map)]))))
-
 (defn current-state-handler [last-switch-events-stmt width height]
   {:width width :height height
    :switch-times (esp/pull-events last-switch-events-stmt)})
@@ -56,7 +52,7 @@
         messaging-conn (messaging/connect)]
 
     (messaging/subscribe messaging-conn queue
-      (fn [event] (send-event esp-service SwitchEvent event)))
+      (fn [event-attrs] (esp/trigger-event esp-service SwitchEvent event-attrs)))
 
     #(do
       (messaging/disconnect messaging-conn)
