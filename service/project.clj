@@ -1,8 +1,4 @@
-(defproject service "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
-  :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+(defproject kholodilov.crossroads-simulator/service "0.1.0-SNAPSHOT"
   :dependencies [[org.clojure/clojure _]
                  [compojure "1.1.6"]
                  [http-kit "2.1.13"]
@@ -11,9 +7,9 @@
                  [javax.servlet/servlet-api "2.5"]
                  [sonian/carica "1.1.0" :exclusions [[cheshire]]]
                  [fogus/ring-edn "0.2.0"]
+                 [com.novemberain/langohr _]
                  [kholodilov/clj-esper "1.0.2-SNAPSHOT"]
-                 [org.clojure/tools.cli _]
-                 [com.novemberain/langohr _]]
+                 [kholodilov.crossroads-simulator/common _]]
   :plugins [[lein-modules "0.3.6"]]
   :profiles {:test 
               {:dependencies [[stylefruits/gniazdo "0.2.1"]]}}

@@ -1,4 +1,4 @@
-(defproject client "0.1.0-SNAPSHOT"
+(defproject kholodilov.crossroads-simulator/client "0.1.0-SNAPSHOT"
   :dependencies [[org.clojure/clojure _]
                  [org.clojure/clojurescript "0.0-2202"]
                  [enfocus "2.1.0-SNAPSHOT"]

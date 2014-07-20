@@ -1,12 +1,8 @@
-(defproject data-source "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
-  :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+(defproject kholodilov.crossroads-simulator/data-source "0.1.0-SNAPSHOT"
   :dependencies [[org.clojure/clojure _]
-                 [org.clojure/tools.cli _]
                  [ruiyun/tools.timer "1.0.1"]
-                 [com.novemberain/langohr _]]
+                 [com.novemberain/langohr _]
+                 [kholodilov.crossroads-simulator/common _]]
   :plugins [[lein-modules "0.3.6"]]
   :test-selectors {
     :default (fn [m] (not (:integration m)))

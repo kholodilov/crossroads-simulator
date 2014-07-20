@@ -2,7 +2,7 @@
   (:require [org.httpkit.server :as http-kit]
             [clj-esper.core :as esp]
             [service.web :refer (start-web-service)]
-            [clojure.tools.cli :refer [parse-opts]]
+            [common.cli        :as cli]
             [langohr.core      :as rmq]
             [langohr.channel   :as lch]
             [langohr.queue     :as lq]
@@ -67,16 +67,8 @@
     #(do (stop-web-service) (rmq/close ch) (rmq/close conn) (.destroy esp-service))
 ))
 
-(def cli-options
-  [["-w" "--width n" "Width"
-    :default 4
-    :parse-fn #(Integer/parseInt %)]
-   ["-h" "--height n" "Height"
-    :default 3
-    :parse-fn #(Integer/parseInt %)]
-   [nil "--switch-events-queue queue-name" "Queue"
-    :default "switch-events"]])
+(def cli-options [])
 
 (defn -main [& args]
-  (let [{:keys [options]} (parse-opts args cli-options)]
-    (run (options :width) (options :height) (options :switch-events-queue))))
+  (let [{:keys [width height switch-events-queue]} (cli/parse-opts args cli-options)]
+    (run width height switch-events-queue)))
