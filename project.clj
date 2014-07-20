@@ -8,8 +8,6 @@
     :subprocess false
     :versions {
       clojure "1.6.0"
-      tools.cli "0.3.1"
-      langohr "2.11.0"
       kholodilov.crossroads-simulator :version
     }
   }

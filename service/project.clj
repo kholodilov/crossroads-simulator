@@ -7,7 +7,6 @@
                  [javax.servlet/servlet-api "2.5"]
                  [sonian/carica "1.1.0" :exclusions [[cheshire]]]
                  [fogus/ring-edn "0.2.0"]
-                 [com.novemberain/langohr _]
                  [kholodilov/clj-esper "1.0.2-SNAPSHOT"]
                  [kholodilov.crossroads-simulator/common _]]
   :plugins [[lein-modules "0.3.6"]]

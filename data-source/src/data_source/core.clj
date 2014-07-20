@@ -1,33 +1,25 @@
 (ns data-source.core
-  (:require [langohr.core       :as rmq]
-            [langohr.channel    :as lch]
-            [langohr.queue      :as lq]
-            [langohr.basic      :as lb]
-            [ruiyun.tools.timer :as timer]
+  (:require [ruiyun.tools.timer :as timer]
             [common.cli         :as cli]
+            [common.messaging   :as messaging]
             [data-source.gen    :as gen]))
 
-(def default-exchange "")
-
 (defn start-switch-events-generator [width height publish-fn]
-  (let [state (atom (gen/initial-switch-events width height))
-        upd-and-pub-state
-          #(do 
-            (swap! state gen/next-switch-events)
-            (doseq [s @state] (publish-fn (pr-str s))))
-        timer (timer/run-task! upd-and-pub-state :period 1000)]
+  (let [switch-events (atom (gen/initial-switch-events width height))
+        generate-and-publish-switch-events
+          (fn [] 
+            (swap! switch-events gen/next-switch-events)
+            (dorun (map publish-fn @switch-events)))
+        timer (timer/run-task! generate-and-publish-switch-events :period 1000)]
     #(timer/cancel! timer)))
 
 (defn run [width height queue]
-  (let [conn (rmq/connect)
-        ch (lch/open conn)
-        _ (lq/declare ch queue)
-        stop-gen (start-switch-events-generator width height 
-                    (partial lb/publish ch default-exchange queue))]
+  (let [messaging-conn (messaging/connect)
+        publish-fn (messaging/publish-fn messaging-conn queue)
+        stop-gen (start-switch-events-generator width height publish-fn)]
     #(do
       (stop-gen)
-      (rmq/close ch)
-      (rmq/close conn))))
+      (messaging/disconnect messaging-conn))))
 
 (def cli-options [])
 

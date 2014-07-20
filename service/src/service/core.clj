@@ -1,18 +1,15 @@
 (ns service.core
   (:require [org.httpkit.server :as http-kit]
-            [clj-esper.core :as esp]
-            [service.web :refer (start-web-service)]
-            [common.cli        :as cli]
-            [langohr.core      :as rmq]
-            [langohr.channel   :as lch]
-            [langohr.queue     :as lq]
-            [langohr.consumers :as lc]))
+            [clj-esper.core     :as esp]
+            [common.cli         :as cli]
+            [common.messaging   :as messaging]
+            [service.web        :as web]))
 
 (esp/defevent SwitchEvent [x :int y :int t :int direction :string])
 
-(defn send-event [esp-service event attrs]
+(defn send-event [esp-service event attrs-map]
   (esp/trigger-event esp-service
-    (apply esp/new-event (into [event] attrs))))
+    (apply esp/new-event (flatten [event (vec attrs-map)]))))
 
 (defn current-state-handler [last-switch-events-stmt width height]
   {:width width :height height
@@ -52,19 +49,19 @@
   (let [esp-conf (esp/create-configuration [SwitchEvent])
         esp-service (esp/create-service "CrossroadsSimulator" esp-conf)
         last-switch-events-stmt (esp/create-statement esp-service "select * from SwitchEvent.std:unique(x,y)")
-        conn (rmq/connect)
-        ch (lch/open conn)
-        _ (lq/declare ch queue)
-        _ (lc/subscribe ch queue
-            (fn [_ _ ^bytes payload]
-              (let [event (flatten (vec (read-string (String. payload "UTF-8"))))]
-                (send-event esp-service SwitchEvent event)))
-            :auto-ack true)
         stop-web-service
-          (start-web-service {:port 3000}
+          (web/start-web-service {:port 3000}
             (partial current-state-handler last-switch-events-stmt width height)
-            (partial query-handler esp-service))]
-    #(do (stop-web-service) (rmq/close ch) (rmq/close conn) (.destroy esp-service))
+            (partial query-handler esp-service))
+        messaging-conn (messaging/connect)]
+
+    (messaging/subscribe messaging-conn queue
+      (fn [event] (send-event esp-service SwitchEvent event)))
+
+    #(do
+      (messaging/disconnect messaging-conn)
+      (stop-web-service)
+      (.destroy esp-service))
 ))
 
 (def cli-options [])
