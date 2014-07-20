@@ -17,9 +17,12 @@
         conn (rmq/connect)
         ch (lch/open conn)
         _ (lq/declare ch queue)
-        _ (lc/subscribe ch queue (handler result))
+        _ (lq/purge ch queue)
+        _ (lc/subscribe ch queue (handler result) :auto-ack true)
         stop-source (ds/run 2 1 queue)]
     (Thread/sleep 2500)
     (stop-source)
+    (rmq/close ch)
+    (rmq/close conn)
     (println @result)
     (is (= 6 (count @result)))))

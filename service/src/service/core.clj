@@ -2,39 +2,17 @@
   (:require [org.httpkit.server :as http-kit]
             [clj-esper.core :as esp]
             [service.web :refer (start-web-service)]
-            [clojure.tools.cli :refer [parse-opts]]))
+            [clojure.tools.cli :refer [parse-opts]]
+            [langohr.core      :as rmq]
+            [langohr.channel   :as lch]
+            [langohr.queue     :as lq]
+            [langohr.consumers :as lc]))
 
-(def max-wait 30)
-(def states ["ns" "we"])
+(esp/defevent SwitchEvent [x :int y :int t :int direction :string])
 
-(defn rand-state [] (rand-nth states))
-(defn flip-state [state]
-  (first (clojure.set/difference (set states) (list state))))
-
-(esp/defevent SwitchEvent [x :int y :int t :int state :string])
-
-(defn send-event [esp-service event & attrs]
+(defn send-event [esp-service event attrs]
   (esp/trigger-event esp-service
-    (apply esp/new-event (conj attrs event))))
-
-(defn switch-loop [send-event-fn proceed-fn x y t state]
-  (if (> t 0)
-    (do
-      (send-event-fn SwitchEvent :x x :y y :t t :state state)
-      (when (proceed-fn)
-        (recur send-event-fn proceed-fn x y (dec t) state)))
-    (recur send-event-fn proceed-fn x y (rand-int max-wait) (flip-state state))))
-
-(defn start-simulation [esp-service width height]
-  (let [futures
-          (for [x (range width) y (range height)]
-            (future
-              (switch-loop
-                (partial send-event esp-service)
-                (fn [] (Thread/sleep 1000) true)
-                x y 0 (rand-state))))]
-    (doall futures)
-    #(doseq [f futures] (future-cancel f))))
+    (apply esp/new-event (into [event] attrs))))
 
 (defn current-state-handler [last-switch-events-stmt width height]
   {:width width :height height
@@ -70,16 +48,23 @@
     )
 ))
 
-(defn run [width height]
+(defn run [width height queue]
   (let [esp-conf (esp/create-configuration [SwitchEvent])
         esp-service (esp/create-service "CrossroadsSimulator" esp-conf)
         last-switch-events-stmt (esp/create-statement esp-service "select * from SwitchEvent.std:unique(x,y)")
-        stop-simulation (start-simulation esp-service width height)
-        stop-web-service     
+        conn (rmq/connect)
+        ch (lch/open conn)
+        _ (lq/declare ch queue)
+        _ (lc/subscribe ch queue
+            (fn [_ _ ^bytes payload]
+              (let [event (flatten (vec (read-string (String. payload "UTF-8"))))]
+                (send-event esp-service SwitchEvent event)))
+            :auto-ack true)
+        stop-web-service
           (start-web-service {:port 3000}
             (partial current-state-handler last-switch-events-stmt width height)
             (partial query-handler esp-service))]
-    #(do (stop-web-service) (stop-simulation) (.destroy esp-service))
+    #(do (stop-web-service) (rmq/close ch) (rmq/close conn) (.destroy esp-service))
 ))
 
 (def cli-options
@@ -88,8 +73,10 @@
     :parse-fn #(Integer/parseInt %)]
    ["-h" "--height n" "Height"
     :default 3
-    :parse-fn #(Integer/parseInt %)]])
+    :parse-fn #(Integer/parseInt %)]
+   [nil "--switch-events-queue queue-name" "Queue"
+    :default "switch-events"]])
 
 (defn -main [& args]
   (let [{:keys [options]} (parse-opts args cli-options)]
-    (run (options :width) (options :height))))
+    (run (options :width) (options :height) (options :switch-events-queue))))
