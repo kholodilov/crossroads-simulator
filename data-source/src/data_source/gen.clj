@@ -11,11 +11,11 @@
   (merge state
     (if (> t 0)
       {:t (dec t) :direction direction}
-      {:t (rand-int max-wait) :direction (flip-direction direction)})))
+      {:t max-wait :direction (flip-direction direction)})))
 
 (defn initial-switch-events [width height] 
   (for [x (range width) y (range height)]
-    {:x x :y y :t 0 :direction (rand-nth directions)}))
+    {:x x :y y :t (rand-int max-wait) :direction (rand-nth directions)}))
 
 (defn next-switch-events [switch-events]
   (map next-state switch-events))
