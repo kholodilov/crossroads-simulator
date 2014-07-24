@@ -13,5 +13,6 @@
   ["#clear-results"] (ev/listen :click #(ef/at ".query-results" (ef/content ""))))
 
 (defn StartQueryEngine []
-  (let [ws (init-websocket "ws://localhost:3000/query" #() #(display-query-result (.-data %)))]
+  (let [ws (init-websocket "ws://localhost:3000/query" #() 
+              #(display-query-result (sort (cljs.reader/read-string (.-data %)))))]
     (setup ws)))
