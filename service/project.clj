@@ -12,9 +12,5 @@
   :plugins [[lein-modules "0.3.6"]]
   :profiles {:test 
               {:dependencies [[stylefruits/gniazdo "0.2.1"]]}}
-  :test-selectors {
-    :default (fn [m] (not (:integration m)))
-    :itest (fn [m] true)
-  }
   :main service.core)
 

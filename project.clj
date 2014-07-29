@@ -10,6 +10,12 @@
       clojure "1.6.0"
       kholodilov.crossroads-simulator :version
     }
+    :inherited {
+      :test-selectors ^:replace {
+        :default (fn [m] (not (:integration m)))
+        :itest (fn [m] true)
+      }
+    }
   }
 )
 
