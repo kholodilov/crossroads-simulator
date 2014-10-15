@@ -1,0 +1,15 @@
+select e1.x, e1.y, e1.t, e2.x, e2.y, e2.t, e1.direction
+from SwitchEvent.std:unique(x,y) e1, SwitchEvent.std:unique(x,y) e2
+where ((Math.abs(e2.x-e1.x) = 1 and e1.y = e2.y and e1.direction = "we")
+or (Math.abs(e2.y-e1.y) = 1 and e1.x = e2.x  and e1.direction = "ns"))
+and e1.direction = e2.direction
+
+select e1.x, e1.y, e1.t, e2.x, e2.y, e2.t, e1.direction
+from SwitchEvent.std:unique(x,y) e1, SwitchEvent.std:unique(x,y) e2
+where e2.x-e1.x = 1 and e1.y = e2.y and e1.direction = "we"
+and e1.direction = e2.direction
+
+select e1.x, e1.y
+from SwitchEvent.std:unique(x,y) e1, SwitchEvent.std:unique(x,y) e2
+where e2.x-e1.x = 1 and e1.y = e2.y and e1.direction = "we"
+and e1.direction = e2.direction and e1.t > 5  and e2.t > 20
