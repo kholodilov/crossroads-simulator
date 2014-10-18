@@ -8,8 +8,11 @@
                 (.addOption "step-length" "0.1")
                 (.addOption "start" nil))]
     (.runServer conn)
-    (for [i (range 3600)]
+    (doseq [i (range 3600)]
       (do
         (.do_timestep conn)
-        (.do_job_set conn (Vehicle/add (str "v" i) "car" "r1" 0 0 13.8 1))))
-    (.close conn)))
+        (.do_job_set conn (Vehicle/add (str "v" i) "car" "r1" 0 0 13.8 1))
+      ))
+    (println "close")
+    (.close conn)
+  ))
