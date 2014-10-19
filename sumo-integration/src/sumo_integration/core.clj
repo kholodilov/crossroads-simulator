@@ -10,11 +10,12 @@
                 (.addOption "step-length" step-length-seconds)
                 (.addOption "start" nil))]
     (.runServer conn)
-    (doseq [i (range 1 300)]
+    (doseq [i (range 1 3000)]
       (do
         (.do_timestep conn)
-        (.do_job_set conn (Vehicle/add (str "v" i) "car" "r1" (* i step) 0 13.8 1))
+        (.do_job_set conn (Vehicle/add (str "v" i) "car" (str "s" (+ 1 (rem i 2))) (* i step) 0 13.8 1))
         (println i)
+        (println (str "Vehicles: " (seq (.do_job_get conn (Vehicle/getIDList)))))
         (Thread/sleep step)
       ))
     (println "close")
