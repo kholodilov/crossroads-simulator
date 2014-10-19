@@ -15,6 +15,9 @@
   ([conn lane-id]
     (.do_job_get conn (Lane/getLastStepVehicleNumber lane-id))))
 
+(defn lane-occupancy [conn lane-id]
+  (.do_job_get conn (Lane/getLastStepOccupancy lane-id)))
+
 (defn add-vehicle [conn]
   (let [t (simulation-time conn)
         route (str "s" (rand-int 2))
@@ -22,11 +25,17 @@
     (.do_job_set conn (Vehicle/add id "car" route t 0 13.8 0))
   ))
 
+(defn format-percentage [fraction]
+  (str (format "%.0f" (* 100 fraction)) "%"))
+
+(defn report-lane [conn lane-id]
+  (str lane-id ": " (vehicles-count conn lane-id) " / " (format-percentage (lane-occupancy conn lane-id))))
+
 (defn report [conn]
   (println (str 
-    "Vehicles: "  (vehicles-count conn)
-    ", gneE0_0: " (vehicles-count conn "gneE0_0")
-    ", gneE0_1: " (vehicles-count conn "gneE0_1")
+    "Vehicles: " (vehicles-count conn) ", "
+    (report-lane conn "gneE0_0") ", "
+    (report-lane conn "gneE0_1")
   )))
 
 (defn -main [& args]
@@ -38,7 +47,7 @@
                 (.addOption "start" nil))]
     (.runServer conn)
     (timer/run-task! #(.do_timestep conn) :period step-length)
-    (timer/run-task! #(add-vehicle conn) :period (* step-length 5))
+    (timer/run-task! #(add-vehicle conn) :period (* step-length 5) :delay 1000)
     (timer/run-task! #(report conn) :period (* step-length 3))
   )
 )
