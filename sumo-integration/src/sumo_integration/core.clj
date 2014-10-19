@@ -17,9 +17,10 @@
         route (str "s" (rand-int 2))
         id (str "v" t)]
     (.do_job_set conn (Vehicle/add id "car" route t 0 13.8 0))
-    (println (str "Vehicles: " (vehicles-count conn)))
-  )
-)
+  ))
+
+(defn report-vehicles-count [conn]
+  (println (str "Vehicles: " (vehicles-count conn))))
 
 (defn -main [& args]
   (let [step-length 300
@@ -31,5 +32,6 @@
     (.runServer conn)
     (timer/run-task! #(.do_timestep conn) :period step-length)
     (timer/run-task! #(add-vehicle conn) :period (* step-length 5))
+    (timer/run-task! #(report-vehicles-count conn) :period (* step-length 3))
   )
 )
