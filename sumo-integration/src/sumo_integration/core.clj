@@ -21,7 +21,7 @@
 (defn add-vehicle [conn]
   (let [t (simulation-time conn)
         route (str "s" (rand-int 10))
-        id (str "v" t)]
+        id (str "v" t "_" (rand-int 100))]
     (.do_job_set conn (Vehicle/add id "car" route t 0 13.8 0))
   ))
 
@@ -48,7 +48,7 @@
                 (.addOption "start" nil))]
     (.runServer conn)
     (timer/run-task! #(.do_timestep conn) :period step-length)
-    (timer/run-task! #(add-vehicle conn) :period (* step-length 5) :delay 1000)
+    (timer/run-task! #(add-vehicle conn) :period (* step-length 2) :delay 1000)
     (timer/run-task! #(report conn) :period (* step-length 3))
   )
 )
