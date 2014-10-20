@@ -20,9 +20,10 @@
 
 (defn add-vehicle [conn]
   (let [t (simulation-time conn)
+        add-time (+ t 1000)
         route (str "s" (rand-int 10))
-        id (str "v" t "_" (rand-int 100))]
-    (.do_job_set conn (Vehicle/add id "car" route t 0 13.8 0))
+        id (str "v" add-time "_" (rand-int 100))]
+    (.do_job_set conn (Vehicle/add id "car" route add-time 0 13.8 0))
   ))
 
 (defn format-percentage [fraction]
