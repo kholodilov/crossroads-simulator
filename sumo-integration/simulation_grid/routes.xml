@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<routes>
+  <route id="s0" edges="0/1to1/1 1/1to2/1 2/1to3/1 3/1to4/1"/>
+  <route id="s1" edges="4/1to3/1 3/1to2/1 2/1to1/1 1/1to0/1"/>
+  <route id="s2" edges="0/2to1/2 1/2to2/2 2/2to3/2 3/2to4/2"/>
+  <route id="s3" edges="4/2to3/2 3/2to2/2 2/2to1/2 1/2to0/2"/>
+  <route id="s4" edges="1/0to1/1 1/1to1/2 1/2to1/3"/>
+  <route id="s5" edges="1/3to1/2 1/2to1/1 1/1to1/0"/>
+  <route id="s6" edges="2/0to2/1 2/1to2/2 2/2to2/3"/>
+  <route id="s7" edges="2/3to2/2 2/2to2/1 2/1to2/0"/>
+  <route id="s8" edges="3/0to3/1 3/1to3/2 3/2to3/3"/>
+  <route id="s9" edges="3/3to3/2 3/2to3/1 3/1to3/0"/>
+</routes>

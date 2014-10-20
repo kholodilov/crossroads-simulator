@@ -20,7 +20,7 @@
 
 (defn add-vehicle [conn]
   (let [t (simulation-time conn)
-        route (str "s" (rand-int 2))
+        route (str "s" (rand-int 10))
         id (str "v" t)]
     (.do_job_set conn (Vehicle/add id "car" route t 0 13.8 0))
   ))
@@ -33,16 +33,17 @@
 
 (defn report [conn]
   (println (str 
-    "Vehicles: " (vehicles-count conn) ", "
-    (report-lane conn "gneE0_0") ", "
-    (report-lane conn "gneE0_1")
+    "Vehicles: " (vehicles-count conn)
+    ;", " (report-lane conn "0/0to0/1_0")
+    ;", " (report-lane conn "0/1to0/2_0")
+    ;", " (report-lane conn "0/1to1/1_0")
   )))
 
 (defn -main [& args]
   (let [step-length 300
         step-length-seconds (str (/ step-length 1000.))
         conn (doto 
-                (SumoTraciConnection. "/opt/sumo/bin/sumo-gui" "simulation/config.sumo.cfg")
+                (SumoTraciConnection. "/opt/sumo/bin/sumo-gui" "simulation_grid/config.sumo.cfg")
                 (.addOption "step-length" step-length-seconds)
                 (.addOption "start" nil))]
     (.runServer conn)
