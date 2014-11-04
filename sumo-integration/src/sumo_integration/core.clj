@@ -1,7 +1,7 @@
 (ns sumo-integration.core
   (:require [ruiyun.tools.timer :as timer])
   (:import [it.polito.appeal.traci SumoTraciConnection]
-           [de.tudresden.sumo.cmd Vehicle Simulation Lane]))
+           [de.tudresden.sumo.cmd Vehicle Simulation Lane Trafficlights]))
 
 (defn simulation-time [conn]
   (.do_job_get conn (Simulation/getCurrentTime)))
@@ -18,6 +18,13 @@
 (defn lane-occupancy [conn lane-id]
   (.do_job_get conn (Lane/getLastStepOccupancy lane-id)))
 
+(defn tl-ids [conn]
+  (seq (.do_job_get conn (Trafficlights/getIDList))))
+
+(defn tl-next-switch [conn id]
+  (- (.do_job_get conn (Trafficlights/getNextSwitch id))
+     (simulation-time conn)))
+
 (defn add-vehicle [conn]
   (let [t (simulation-time conn)
         add-time (+ t 1000)
@@ -32,13 +39,27 @@
 (defn report-lane [conn lane-id]
   (str lane-id ": " (vehicles-count conn lane-id) " / " (format-percentage (lane-occupancy conn lane-id))))
 
+(defn report-tl [conn id]
+  (str id "=" (tl-next-switch conn id))
+)
+
+(defn report-tls [conn]
+  (clojure.string/join ", "
+    (for [id (tl-ids conn)] 
+      (report-tl conn id)))
+)
+
 (defn report [conn]
   (println (str 
     "Vehicles: " (vehicles-count conn)
     ;", " (report-lane conn "0/0to0/1_0")
     ;", " (report-lane conn "0/1to0/2_0")
     ;", " (report-lane conn "0/1to1/1_0")
-  )))
+  ))
+  (println (str
+    "Traffic lights: " (report-tls conn)
+  ))
+)
 
 (defn -main [& args]
   (let [step-length 300
