@@ -21,6 +21,12 @@
 (defn tl-ids [conn]
   (seq (.do_job_get conn (Trafficlights/getIDList))))
 
+(defn tl-phase-id [conn id]
+  (.do_job_get conn (Trafficlights/getPhase id)))
+
+(defn tl-phase-duration [conn id]
+  (.do_job_get conn (Trafficlights/getPhaseDuration id)))
+
 (defn tl-next-switch [conn id]
   (- (.do_job_get conn (Trafficlights/getNextSwitch id))
      (simulation-time conn)))
@@ -43,7 +49,7 @@
   (str lane-id ": " (vehicles-count conn lane-id) " / " (format-percentage (lane-occupancy conn lane-id))))
 
 (defn report-tl [conn id]
-  (str id "=" (tl-next-switch conn id) "(" (tl-state conn id) ")")
+  (str id "=" (tl-next-switch conn id) "/" (tl-phase-duration conn id) "(" (tl-phase-id conn id) ":" (tl-state conn id) ")")
 )
 
 (defn report-tls [conn width height]
