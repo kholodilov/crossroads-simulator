@@ -25,6 +25,9 @@
   (- (.do_job_get conn (Trafficlights/getNextSwitch id))
      (simulation-time conn)))
 
+(defn tl-state [conn id]
+  (.do_job_get conn (Trafficlights/getRedYellowGreenState id)))
+
 (defn add-vehicle [conn]
   (let [t (simulation-time conn)
         add-time (+ t 1000)
@@ -40,7 +43,7 @@
   (str lane-id ": " (vehicles-count conn lane-id) " / " (format-percentage (lane-occupancy conn lane-id))))
 
 (defn report-tl [conn id]
-  (str id "=" (tl-next-switch conn id))
+  (str id "=" (tl-next-switch conn id) "(" (tl-state conn id) ")")
 )
 
 (defn report-tls [conn]
