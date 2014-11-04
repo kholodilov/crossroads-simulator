@@ -18,16 +18,16 @@
 (defn lane-occupancy [conn lane-id]
   (.do_job_get conn (Lane/getLastStepOccupancy lane-id)))
 
-(defrecord TrafficLights [id phase-id phase-duration next-switch state]
+(defrecord TrafficLights [id phase-id phase-duration remaining-duration state]
   Object
   (toString [tl]
     (str (:id tl) "=" 
-         (:next-switch tl) "/" (:phase-duration tl)
+         (:remaining-duration tl) "/" (:phase-duration tl)
          "(" (:phase-id tl) ":" (:state tl) ")"
     )))
 
-(defn build-tl [& {:keys [id phase-id phase-duration next-switch state]}]
-  (TrafficLights. id phase-id phase-duration next-switch state))
+(defn build-tl [& {:keys [id phase-id phase-duration remaining-duration state]}]
+  (TrafficLights. id phase-id phase-duration remaining-duration state))
 
 (defn retrieve-tl [conn id]
   (build-tl
@@ -36,12 +36,15 @@
       (.do_job_get conn (Trafficlights/getPhase id))
     :phase-duration
       (.do_job_get conn (Trafficlights/getPhaseDuration id))
-    :next-switch
+    :remaining-duration
       (- (.do_job_get conn (Trafficlights/getNextSwitch id))
         (simulation-time conn))
     :state
       (.do_job_get conn (Trafficlights/getRedYellowGreenState id))
   ))
+
+(defn update-tl-remaining-duration [conn id duration]
+  (.do_job_set conn (Trafficlights/setPhaseDuration id duration)))
 
 (defn add-vehicle [conn]
   (let [t (simulation-time conn)
@@ -57,12 +60,15 @@
 (defn report-lane [conn lane-id]
   (str lane-id ": " (vehicles-count conn lane-id) " / " (format-percentage (lane-occupancy conn lane-id))))
 
+(defn coord-range [dimension] (range 1 (+ dimension 1)))
+
+(defn tl-id [x y] (str x "/" y))
+
 (defn report-tls [conn width height]
   (clojure.string/join ", "
-    (for [x (range 1 (+ width 1)) y (range 1 (+ height 1))]
-      (let [id (str x "/" y)]
-        (retrieve-tl conn id))))
-)
+    (for [x (coord-range width)
+          y (coord-range height)]
+      (retrieve-tl conn (tl-id x y)))))
 
 (defn report [conn width height]
   (println (str 
@@ -76,6 +82,16 @@
   ))
 )
 
+(defn tl-monkey [conn width height]
+  (let [x (rand-nth (coord-range width))
+        y (rand-nth (coord-range height))
+        id (tl-id x y)
+        tl (retrieve-tl conn id)
+        duration (:remaining-duration tl)
+        new-duration (+ 3000 duration)]
+    (update-tl-remaining-duration conn id new-duration)
+    (println (str "### tl-monkey: " id " " duration "->" new-duration))))
+
 (defn -main [& args]
   (let [step-length 300
         step-length-seconds (str (/ step-length 1000.))
@@ -88,6 +104,7 @@
     (.runServer conn)
     (timer/run-task! #(.do_timestep conn) :period step-length)
     (timer/run-task! #(add-vehicle conn) :period (* step-length 2) :delay 1000)
-    (timer/run-task! #(report conn width height) :period (* step-length 3))
+    (timer/run-task! #(report conn width height) :period (* step-length 10))
+    (timer/run-task! #(tl-monkey conn width height) :period (* step-length 50))
   )
 )
