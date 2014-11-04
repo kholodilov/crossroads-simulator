@@ -46,13 +46,14 @@
   (str id "=" (tl-next-switch conn id) "(" (tl-state conn id) ")")
 )
 
-(defn report-tls [conn]
+(defn report-tls [conn width height]
   (clojure.string/join ", "
-    (for [id (tl-ids conn)] 
-      (report-tl conn id)))
+    (for [x (range 1 (+ width 1)) y (range 1 (+ height 1))]
+      (let [id (str x "/" y)]
+        (report-tl conn id))))
 )
 
-(defn report [conn]
+(defn report [conn width height]
   (println (str 
     "Vehicles: " (vehicles-count conn)
     ;", " (report-lane conn "0/0to0/1_0")
@@ -60,13 +61,15 @@
     ;", " (report-lane conn "0/1to1/1_0")
   ))
   (println (str
-    "Traffic lights: " (report-tls conn)
+    "Traffic lights: " (report-tls conn width height)
   ))
 )
 
 (defn -main [& args]
   (let [step-length 300
         step-length-seconds (str (/ step-length 1000.))
+        width 3
+        height 2
         conn (doto 
                 (SumoTraciConnection. "/opt/sumo/bin/sumo-gui" "simulation_grid/config.sumo.cfg")
                 (.addOption "step-length" step-length-seconds)
@@ -74,6 +77,6 @@
     (.runServer conn)
     (timer/run-task! #(.do_timestep conn) :period step-length)
     (timer/run-task! #(add-vehicle conn) :period (* step-length 2) :delay 1000)
-    (timer/run-task! #(report conn) :period (* step-length 3))
+    (timer/run-task! #(report conn width height) :period (* step-length 3))
   )
 )
