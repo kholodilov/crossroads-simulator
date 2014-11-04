@@ -18,21 +18,30 @@
 (defn lane-occupancy [conn lane-id]
   (.do_job_get conn (Lane/getLastStepOccupancy lane-id)))
 
-(defn tl-ids [conn]
-  (seq (.do_job_get conn (Trafficlights/getIDList))))
+(defrecord TrafficLights [id phase-id phase-duration next-switch state]
+  Object
+  (toString [tl]
+    (str (:id tl) "=" 
+         (:next-switch tl) "/" (:phase-duration tl)
+         "(" (:phase-id tl) ":" (:state tl) ")"
+    )))
 
-(defn tl-phase-id [conn id]
-  (.do_job_get conn (Trafficlights/getPhase id)))
+(defn build-tl [& {:keys [id phase-id phase-duration next-switch state]}]
+  (TrafficLights. id phase-id phase-duration next-switch state))
 
-(defn tl-phase-duration [conn id]
-  (.do_job_get conn (Trafficlights/getPhaseDuration id)))
-
-(defn tl-next-switch [conn id]
-  (- (.do_job_get conn (Trafficlights/getNextSwitch id))
-     (simulation-time conn)))
-
-(defn tl-state [conn id]
-  (.do_job_get conn (Trafficlights/getRedYellowGreenState id)))
+(defn retrieve-tl [conn id]
+  (build-tl
+    :id id
+    :phase-id
+      (.do_job_get conn (Trafficlights/getPhase id))
+    :phase-duration
+      (.do_job_get conn (Trafficlights/getPhaseDuration id))
+    :next-switch
+      (- (.do_job_get conn (Trafficlights/getNextSwitch id))
+        (simulation-time conn))
+    :state
+      (.do_job_get conn (Trafficlights/getRedYellowGreenState id))
+  ))
 
 (defn add-vehicle [conn]
   (let [t (simulation-time conn)
@@ -48,15 +57,11 @@
 (defn report-lane [conn lane-id]
   (str lane-id ": " (vehicles-count conn lane-id) " / " (format-percentage (lane-occupancy conn lane-id))))
 
-(defn report-tl [conn id]
-  (str id "=" (tl-next-switch conn id) "/" (tl-phase-duration conn id) "(" (tl-phase-id conn id) ":" (tl-state conn id) ")")
-)
-
 (defn report-tls [conn width height]
   (clojure.string/join ", "
     (for [x (range 1 (+ width 1)) y (range 1 (+ height 1))]
       (let [id (str x "/" y)]
-        (report-tl conn id))))
+        (retrieve-tl conn id))))
 )
 
 (defn report [conn width height]
