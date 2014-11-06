@@ -11,41 +11,11 @@
     <vType id="motorcycle" accel="6.0" decel="5.5" sigma="0.0" length="2.0" minGap="1.5" maxSpeed="220" guiShape="motorcycle" vClass="private"/>
 
 
-    <tlLogic id="1/1" type="static" programID="1" offset="0">
-        <phase duration="31" state="rrrGGgrrrGGg"/>
-        <phase duration="4"  state="rrryyyrrryyy"/>
-        <phase duration="31" state="GGgrrrGGgrrr"/>
-        <phase duration="4"  state="yyyrrryyyrrr"/>
-    </tlLogic>
-    <tlLogic id="1/2" type="static" programID="1" offset="0">
-        <phase duration="31" state="rrrGGgrrrGGg"/>
-        <phase duration="4"  state="rrryyyrrryyy"/>
-        <phase duration="31" state="GGgrrrGGgrrr"/>
-        <phase duration="4"  state="yyyrrryyyrrr"/>
-    </tlLogic>
-    <tlLogic id="2/1" type="static" programID="1" offset="0">
-        <phase duration="31" state="rrrGGgrrrGGg"/>
-        <phase duration="4"  state="rrryyyrrryyy"/>
-        <phase duration="31" state="GGgrrrGGgrrr"/>
-        <phase duration="4"  state="yyyrrryyyrrr"/>
-    </tlLogic>
-    <tlLogic id="2/2" type="static" programID="1" offset="0">
-        <phase duration="31" state="rrrGGgrrrGGg"/>
-        <phase duration="4"  state="rrryyyrrryyy"/>
-        <phase duration="31" state="GGgrrrGGgrrr"/>
-        <phase duration="4"  state="yyyrrryyyrrr"/>
-    </tlLogic>
-    <tlLogic id="3/1" type="static" programID="1" offset="0">
-        <phase duration="31" state="rrrGGgrrrGGg"/>
-        <phase duration="4"  state="rrryyyrrryyy"/>
-        <phase duration="31" state="GGgrrrGGgrrr"/>
-        <phase duration="4"  state="yyyrrryyyrrr"/>
-    </tlLogic>
-    <tlLogic id="3/2" type="static" programID="1" offset="0">
-        <phase duration="31" state="rrrGGgrrrGGg"/>
-        <phase duration="4"  state="rrryyyrrryyy"/>
-        <phase duration="31" state="GGgrrrGGgrrr"/>
-        <phase duration="4"  state="yyyrrryyyrrr"/>
-    </tlLogic>
+    <tlLogic id="1/1" type="static" programID="off" offset="0"></tlLogic>
+    <tlLogic id="1/2" type="static" programID="off" offset="0"></tlLogic>
+    <tlLogic id="2/1" type="static" programID="off" offset="0"></tlLogic>
+    <tlLogic id="2/2" type="static" programID="off" offset="0"></tlLogic>
+    <tlLogic id="3/1" type="static" programID="off" offset="0"></tlLogic>
+    <tlLogic id="3/2" type="static" programID="off" offset="0"></tlLogic>
 
 </additional>

@@ -46,6 +46,9 @@
 (defn update-tl-remaining-duration [conn id duration]
   (.do_job_set conn (Trafficlights/setPhaseDuration id duration)))
 
+(defn update-tl-state [conn id state]
+  (.do_job_set conn (Trafficlights/setRedYellowGreenState id state)))
+
 (defn add-vehicle [conn]
   (let [t (simulation-time conn)
         add-time (+ t 1000)
@@ -92,6 +95,24 @@
     (update-tl-remaining-duration conn id new-duration)
     (println (str "### tl-monkey: " id " " duration "->" new-duration))))
 
+(def tl-program 
+  (flatten (repeat [{:state "rrrGGgrrrGGg" :duration 31000}
+                    {:state "rrryyyrrryyy" :duration 4000}
+                    {:state "GGgrrrGGgrrr" :duration 31000}
+                    {:state "yyyrrryyyrrr" :duration 4000}])))
+
+(defn switch-lights [conn timer width height program]
+  (let [program-step (first program)
+        state (:state program-step)
+        duration (:duration program-step)
+        program* (rest program)]
+    (doseq [x (coord-range width)
+            y (coord-range height)]
+      (let [id (tl-id x y)]
+        (update-tl-state conn id state)
+        (update-tl-remaining-duration conn id duration)))
+    (timer/run-task! #(switch-lights conn timer width height program*) :by timer :delay duration)))
+
 (defn -main [& args]
   (let [step-length 300
         step-length-seconds (str (/ step-length 1000.))
@@ -106,5 +127,6 @@
     (timer/run-task! #(add-vehicle conn) :period (* step-length 2) :delay 1000)
     (timer/run-task! #(report conn width height) :period (* step-length 10))
     (timer/run-task! #(tl-monkey conn width height) :period (* step-length 50))
+    (switch-lights conn (timer/timer) width height tl-program)
   )
 )
