@@ -1,5 +1,6 @@
 (ns sumo-integration.core
-  (:require [ruiyun.tools.timer :as timer])
+  (:require [ruiyun.tools.timer :as timer]
+            [common.service :as service])
   (:import [it.polito.appeal.traci SumoTraciConnection]
            [de.tudresden.sumo.cmd Vehicle Simulation Lane Trafficlights]))
 
@@ -113,20 +114,34 @@
         (update-tl-remaining-duration conn id duration)))
     (timer/run-task! #(switch-lights conn timer width height program*) :by timer :delay duration)))
 
+(defn run-sumo [simulation-conf step-length]
+  (if-let [sumo-home (get (System/getenv) "SUMO_HOME")]
+    (let [step-length-seconds (str (/ step-length 1000.))
+          conn (doto 
+                  (SumoTraciConnection. (str sumo-home "/bin/sumo-gui") simulation-conf)
+                  (.addOption "step-length" step-length-seconds)
+                  (.addOption "start" nil))
+          timer (timer/timer)]
+      (.runServer conn)
+      (timer/run-task! #(.do_timestep conn) :period step-length :by timer)
+      (service/build-service
+        :conn conn
+        :stop-fn (fn []
+          (timer/cancel! timer)
+          (.close conn))
+      ))
+    (throw (RuntimeException. "SUMO_HOME is not defined"))))
+
 (defn -main [& args]
   (let [step-length 300
-        step-length-seconds (str (/ step-length 1000.))
         width 3
         height 2
-        conn (doto 
-                (SumoTraciConnection. "/opt/sumo/bin/sumo-gui" "simulation_grid/config.sumo.cfg")
-                (.addOption "step-length" step-length-seconds)
-                (.addOption "start" nil))]
-    (.runServer conn)
-    (timer/run-task! #(.do_timestep conn) :period step-length)
-    (timer/run-task! #(add-vehicle conn) :period (* step-length 2) :delay 1000)
-    (timer/run-task! #(report conn width height) :period (* step-length 10))
-    (timer/run-task! #(tl-monkey conn width height) :period (* step-length 50))
-    (switch-lights conn (timer/timer) width height tl-program)
+        sumo (run-sumo "simulation_grid/config.sumo.cfg" step-length)
+        sumo-conn (:conn sumo)]
+    (timer/run-task! #(add-vehicle sumo-conn) :period (* step-length 2) :delay 1000)
+    (timer/run-task! #(report sumo-conn width height) :period (* step-length 10))
+    (timer/run-task! #(tl-monkey sumo-conn width height) :period (* step-length 50))
+    (switch-lights sumo-conn (timer/timer) width height tl-program)
+    (timer/run-task! #(service/stop sumo) :delay 15000)
   )
 )
