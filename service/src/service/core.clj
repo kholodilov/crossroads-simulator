@@ -6,15 +6,15 @@
             [common.messaging   :as messaging]
             [service.web        :as web]))
 
-(defn current-state-handler [esp-service width height]
+(defn current-state-handler [event-service width height]
   {:width width :height height
-   :switch-times (events/pull-events esp-service "select * from SwitchEvent.std:unique(x,y)")})
+   :switch-times (events/pull-events event-service "select * from SwitchEvent.std:unique(x,y)")})
 
 (defn query-results-to-channel [channel results]
   (doseq [result results]
     (http-kit/send! channel (pr-str result))))
 
-(defn query-handler [esp-service request]
+(defn query-handler [event-service request]
   (http-kit/with-channel request channel
 
     (println "query: channel opened")
@@ -25,11 +25,11 @@
         (fn [query]
           (@cleanup-fn)
           (println (str "Starting query: " query))
-          (let [subscription (events/subscribe esp-service query listener)]
+          (let [subscription (events/subscribe event-service query listener)]
             (reset! cleanup-fn
               #(do
                 (println (str "Stopping query: " query))
-                (events/unsubscribe esp-service subscription)))
+                (events/unsubscribe event-service subscription)))
             )))
 
       (http-kit/on-close channel
@@ -40,20 +40,20 @@
 ))
 
 (defn run [width height queue]
-  (let [esp-service (events/build-esper-service "CrossroadsSimulator")
+  (let [event-service (events/build-esper-service "CrossroadsSimulator")
         stop-web-service
           (web/start-web-service {:port 3000}
-            (partial current-state-handler esp-service width height)
-            (partial query-handler esp-service))
+            (partial current-state-handler event-service width height)
+            (partial query-handler event-service))
         messaging-conn (messaging/connect)]
 
     (messaging/subscribe messaging-conn queue
-      (fn [event-attrs] (events/trigger-event esp-service events/SwitchEvent event-attrs)))
+      (fn [event-attrs] (events/trigger-event event-service events/SwitchEvent event-attrs)))
 
     #(do
       (messaging/disconnect messaging-conn)
       (stop-web-service)
-      (service/stop esp-service))
+      (service/stop event-service))
 ))
 
 (def cli-options [])

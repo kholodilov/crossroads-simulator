@@ -1,6 +1,6 @@
 (ns common.events
   (:require [common.service :as service]
-            [clj-esper.core :as esp]))
+            [clj-esper.core :as esper]))
 
 (defprotocol EventDriven
   (trigger-event [this event-type event-attrs])
@@ -8,31 +8,31 @@
   (unsubscribe [this subscription])
   (pull-events [this selector]))
 
-(esp/defevent SwitchEvent [x :int y :int t :int direction :string])
+(esper/defevent SwitchEvent [x :int y :int t :int direction :string])
 
 (defn build-esper-service [name]
-  (let [esp-conf (esp/create-configuration [SwitchEvent])
-        esp-service (esp/create-service name esp-conf)]
+  (let [esper-conf (esper/create-configuration [SwitchEvent])
+        esper-service (esper/create-service name esper-conf)]
     (reify
       EventDriven
         (trigger-event [this event-type event-attrs]
-          (esp/trigger-event esp-service event-type event-attrs))
+          (esper/trigger-event esper-service event-type event-attrs))
         (subscribe [this selector listener-fn]
-          (let [statement (esp/create-statement esp-service selector)
-                listener (esp/create-listener listener-fn)]
-            (esp/attach-listener statement listener)
+          (let [statement (esper/create-statement esper-service selector)
+                listener (esper/create-listener listener-fn)]
+            (esper/attach-listener statement listener)
             {:statement statement :listener listener}))
         (unsubscribe [this subscription]
           (let [{:keys [statement listener]} subscription]
-            (esp/detach-listener statement listener)
+            (esper/detach-listener statement listener)
             (.destroy statement)))
         (pull-events [this selector]
-          (let [statement (esp/create-statement esp-service selector)
-                result (esp/pull-events statement)]
+          (let [statement (esper/create-statement esper-service selector)
+                result (esper/pull-events statement)]
             (.destroy statement)))
       service/Stoppable
         (stop [this]
-          (.destroy esp-service))
+          (.destroy esper-service))
     )
   )
 )
