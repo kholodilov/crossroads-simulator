@@ -1,15 +1,14 @@
 (ns service.core
   (:require [org.httpkit.server :as http-kit]
-            [clj-esper.core     :as esp]
             [common.cli         :as cli]
+            [common.events      :as events]
+            [common.service     :as service]
             [common.messaging   :as messaging]
             [service.web        :as web]))
 
-(esp/defevent SwitchEvent [x :int y :int t :int direction :string])
-
-(defn current-state-handler [last-switch-events-stmt width height]
+(defn current-state-handler [esp-service width height]
   {:width width :height height
-   :switch-times (esp/pull-events last-switch-events-stmt)})
+   :switch-times (events/pull-events esp-service "select * from SwitchEvent.std:unique(x,y)")})
 
 (defn query-results-to-channel [channel results]
   (doseq [result results]
@@ -20,18 +19,17 @@
 
     (println "query: channel opened")
 
-    (let [listener (esp/create-listener (partial query-results-to-channel channel))
+    (let [listener (partial query-results-to-channel channel)
           cleanup-fn (atom #())]
       (http-kit/on-receive channel
         (fn [query]
           (@cleanup-fn)
           (println (str "Starting query: " query))
-          (let [stmt (esp/create-statement esp-service query)]
-            (esp/attach-listener stmt listener)
+          (let [subscription (events/subscribe esp-service query listener)]
             (reset! cleanup-fn
               #(do
                 (println (str "Stopping query: " query))
-                (esp/detach-listener stmt listener)))
+                (events/unsubscribe esp-service subscription)))
             )))
 
       (http-kit/on-close channel
@@ -42,22 +40,20 @@
 ))
 
 (defn run [width height queue]
-  (let [esp-conf (esp/create-configuration [SwitchEvent])
-        esp-service (esp/create-service "CrossroadsSimulator" esp-conf)
-        last-switch-events-stmt (esp/create-statement esp-service "select * from SwitchEvent.std:unique(x,y)")
+  (let [esp-service (events/build-esper-service "CrossroadsSimulator")
         stop-web-service
           (web/start-web-service {:port 3000}
-            (partial current-state-handler last-switch-events-stmt width height)
+            (partial current-state-handler esp-service width height)
             (partial query-handler esp-service))
         messaging-conn (messaging/connect)]
 
     (messaging/subscribe messaging-conn queue
-      (fn [event-attrs] (esp/trigger-event esp-service SwitchEvent event-attrs)))
+      (fn [event-attrs] (events/trigger-event esp-service events/SwitchEvent event-attrs)))
 
     #(do
       (messaging/disconnect messaging-conn)
       (stop-web-service)
-      (.destroy esp-service))
+      (service/stop esp-service))
 ))
 
 (def cli-options [])

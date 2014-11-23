@@ -26,7 +26,8 @@
                        {:x 0 :y 1 :t 2 :direction "we"}
                        {:x 1 :y 0 :t 3 :direction "ns"}
                        {:x 1 :y 1 :t 4 :direction "we"}]]
-    (ws/send-msg query-ws "select * from SwitchEvent")
+    (ws/send-msg query-ws "select * from SwitchEvent.std:unique(x,y)")
+    (Thread/sleep 1000)
     (doseq [event switch-events]
       (lb/publish ch default-exchange queue (pr-str event)))
     (Thread/sleep 1000)
