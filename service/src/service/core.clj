@@ -4,6 +4,7 @@
             [common.events      :as events]
             [common.service     :as service]
             [common.messaging   :as messaging]
+            [ruiyun.tools.timer :as timer]
             [service.web        :as web]))
 
 (defn current-state-handler [event-service width height]
@@ -41,6 +42,7 @@
 
 (defn run [width height queue]
   (let [event-service (events/build-esper-service "CrossroadsSimulator")
+        timer (timer/run-task! #(events/trigger-event event-service events/TimerEvent {}) :period 1000)
         stop-web-service
           (web/start-web-service {:port 3000}
             (partial current-state-handler event-service width height)
@@ -53,6 +55,7 @@
     #(do
       (messaging/disconnect messaging-conn)
       (stop-web-service)
+      (timer/cancel! timer)
       (service/stop event-service))
 ))
 

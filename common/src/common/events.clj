@@ -9,9 +9,10 @@
   (pull-events [this selector]))
 
 (esper/defevent SwitchEvent [x :int y :int t :int direction :string])
+(esper/defevent TimerEvent [])
 
 (defn build-esper-service [name]
-  (let [esper-conf (esper/create-configuration [SwitchEvent])
+  (let [esper-conf (esper/create-configuration [SwitchEvent TimerEvent])
         esper-service (esper/create-service name esper-conf)]
     (reify
       EventDriven
