@@ -4,12 +4,13 @@
 
 (defprotocol EventDriven
   (trigger-event [this event-type event-attrs])
-  (subscribe [this selector listener-fn])
-  (unsubscribe [this subscription])
-  (pull-events [this selector]))
+  (create-statement [this query])
+  (destroy-statement [this statement])
+  (subscribe [this statement listener-fn])
+  (pull-events [this statement]))
 
 (esper/defevent SwitchEvent [x :int y :int t :int direction :string])
-(esper/defevent TimerEvent [])
+(esper/defevent TimerEvent [time :int])
 
 (defn build-esper-service [name]
   (let [esper-conf (esper/create-configuration [SwitchEvent TimerEvent])
@@ -18,19 +19,14 @@
       EventDriven
         (trigger-event [this event-type event-attrs]
           (esper/trigger-event esper-service event-type event-attrs))
-        (subscribe [this selector listener-fn]
-          (let [statement (esper/create-statement esper-service selector)
-                listener (esper/create-listener listener-fn)]
-            (esper/attach-listener statement listener)
-            {:statement statement :listener listener}))
-        (unsubscribe [this subscription]
-          (let [{:keys [statement listener]} subscription]
-            (esper/detach-listener statement listener)
-            (.destroy statement)))
-        (pull-events [this selector]
-          (let [statement (esper/create-statement esper-service selector)
-                result (esper/pull-events statement)]
-            (.destroy statement)))
+        (create-statement [this query]
+          (esper/create-statement esper-service query))
+        (destroy-statement [this statement]
+          (.destroy statement))
+        (subscribe [this statement listener-fn]
+          (esper/attach-listener statement (esper/create-listener listener-fn)))
+        (pull-events [this statement]
+          (esper/pull-events statement))
       service/Stoppable
         (stop [this]
           (.destroy esper-service))

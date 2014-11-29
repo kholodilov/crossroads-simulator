@@ -1,11 +1,13 @@
 (ns service.core-integration
   (:require [clojure.test :refer :all]
-            [service.core :as service]
-            [gniazdo.core :as ws]
-            [langohr.core      :as rmq]
-            [langohr.channel   :as lch]
-            [langohr.basic     :as lb]
-            [langohr.queue     :as lq]))
+            [service.core]
+            [common.events    :as events]
+            [common.service   :as service]
+            [gniazdo.core     :as ws]
+            [langohr.core     :as rmq]
+            [langohr.channel  :as lch]
+            [langohr.basic    :as lb]
+            [langohr.queue    :as lq]))
 
 (def default-exchange "")
 
@@ -18,7 +20,7 @@
         ch (lch/open conn)
         _ (lq/declare ch queue)
         _ (lq/purge ch queue)
-        stop-service (service/run 2 2 queue)
+        stop-service (service.core/run 2 2 queue)
         query-result (atom [])
         query-ws (ws/connect "ws://localhost:3000/query"
                     :on-receive (handler query-result))
@@ -37,21 +39,13 @@
     (rmq/close conn)
     (is (= @query-result switch-events))))
 
-(deftest ^:integration test-timer-events
-  (let [queue "test-query-websocket"
-        conn (rmq/connect)
-        ch (lch/open conn)
-        _ (lq/declare ch queue)
-        _ (lq/purge ch queue)
-        stop-service (service/run 2 2 queue)
-        query-result (atom [])
-        query-ws (ws/connect "ws://localhost:3000/query"
-                    :on-receive (handler query-result))]
-    (ws/send-msg query-ws "select * from TimerEvent")
-    (Thread/sleep 3500)
-    (ws/close query-ws)
-    (stop-service)
-    (rmq/close ch)
-    (rmq/close conn)
-    (is (or (= (count @query-result) 3)
-            (= (count @query-result) 4)))))
+(deftest ^:integration test-timer-service
+  (let [event-service (events/build-esper-service "test-timer-service")
+        statement (events/create-statement event-service "select * from TimerEvent.win:keepall()")
+        timer-service (service.core/run-timer event-service 100)]
+    (Thread/sleep 250)
+    (service/stop timer-service)
+    (let [timer-events (events/pull-events event-service statement)]
+        (service/stop event-service)
+        (is (= timer-events [{:time 0} {:time 100} {:time 200}]))
+        )))

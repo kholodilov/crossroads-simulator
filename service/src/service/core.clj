@@ -8,8 +8,10 @@
             [service.web        :as web]))
 
 (defn current-state-handler [event-service width height]
-  {:width width :height height
-   :switch-times (events/pull-events event-service "select * from SwitchEvent.std:unique(x,y)")})
+  (let [statement (events/create-statement event-service "select * from SwitchEvent.std:unique(x,y)")
+        switch-times (events/pull-events event-service statement)]
+    (events/destroy-statement event-service statement)
+    {:width width :height height :switch-times switch-times}))
 
 (defn query-results-to-channel [channel results]
   (doseq [result results]
@@ -26,11 +28,12 @@
         (fn [query]
           (@cleanup-fn)
           (println (str "Starting query: " query))
-          (let [subscription (events/subscribe event-service query listener)]
+          (let [statement (events/create-statement event-service query)]
+            (events/subscribe event-service statement listener)
             (reset! cleanup-fn
               #(do
                 (println (str "Stopping query: " query))
-                (events/unsubscribe event-service subscription)))
+                (events/destroy-statement event-service statement)))
             )))
 
       (http-kit/on-close channel
@@ -40,9 +43,20 @@
     )
 ))
 
+(defn run-timer [event-service period]
+  (let [time (atom 0)
+        timer (timer/timer)
+        timer-fn
+          (fn []
+            (events/trigger-event event-service events/TimerEvent {:time @time})
+            (swap! time + period))]
+      (timer/run-task! timer-fn :period period :by timer)
+      (service/build-service :stop-fn #(timer/cancel! timer))
+    ))
+
 (defn run [width height queue]
   (let [event-service (events/build-esper-service "CrossroadsSimulator")
-        timer (timer/run-task! #(events/trigger-event event-service events/TimerEvent {}) :period 1000)
+        timer-service (run-timer event-service 1000)
         stop-web-service
           (web/start-web-service {:port 3000}
             (partial current-state-handler event-service width height)
@@ -55,7 +69,7 @@
     #(do
       (messaging/disconnect messaging-conn)
       (stop-web-service)
-      (timer/cancel! timer)
+      (service/stop timer-service)
       (service/stop event-service))
 ))
 
