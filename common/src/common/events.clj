@@ -7,14 +7,16 @@
   (create-statement [this query])
   (destroy-statement [this statement])
   (subscribe [this statement listener-fn])
-  (pull-events [this statement]))
+  (pull-events [this statement])
+  (do-timestep [this new-time])
+  (current-time [this]))
 
 (esper/defevent SwitchEvent [x :int y :int t :int direction :string])
-(esper/defevent TimerEvent [time :int])
 
 (defn build-esper-service [name]
-  (let [esper-conf (esper/create-configuration [SwitchEvent TimerEvent])
+  (let [esper-conf (esper/create-configuration (esper/xml-configuration) [SwitchEvent])
         esper-service (esper/create-service name esper-conf)]
+    (esper/send-current-time-event esper-service 0)
     (reify
       EventDriven
         (trigger-event [this event-type event-attrs]
@@ -27,6 +29,10 @@
           (esper/attach-listener statement (esper/create-listener listener-fn)))
         (pull-events [this statement]
           (esper/pull-events statement))
+        (do-timestep [this new-time]
+          (esper/send-current-time-event esper-service new-time))
+        (current-time [this]
+          (esper/get-current-time esper-service))
       service/Stoppable
         (stop [this]
           (.destroy esper-service))

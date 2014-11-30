@@ -37,15 +37,13 @@
     (stop-service)
     (rmq/close ch)
     (rmq/close conn)
-    (is (= @query-result switch-events))))
+    (is (= (set @query-result) (set switch-events)))))
 
 (deftest ^:integration test-timer-service
   (let [event-service (events/build-esper-service "test-timer-service")
-        statement (events/create-statement event-service "select * from TimerEvent.win:keepall()")
         timer-service (service.core/run-timer event-service 100)]
     (Thread/sleep 250)
-    (service/stop timer-service)
-    (let [timer-events (events/pull-events event-service statement)]
-        (service/stop event-service)
-        (is (= timer-events [{:time 0} {:time 100} {:time 200}]))
-        )))
+    (let [current-time (events/current-time event-service)]
+      (service/stop timer-service)
+      (service/stop event-service)
+      (is (= 200 current-time)))))

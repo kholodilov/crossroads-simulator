@@ -48,15 +48,15 @@
         timer (timer/timer)
         timer-fn
           (fn []
-            (events/trigger-event event-service events/TimerEvent {:time @time})
-            (swap! time + period))]
-      (timer/run-task! timer-fn :period period :by timer)
+            (swap! time + period)
+            (events/do-timestep event-service @time))]
+      (timer/run-task! timer-fn :period period :by timer :delay period)
       (service/build-service :stop-fn #(timer/cancel! timer))
     ))
 
 (defn run [width height queue]
   (let [event-service (events/build-esper-service "CrossroadsSimulator")
-        timer-service (run-timer event-service 1000)
+        timer-service (run-timer event-service 100)
         stop-web-service
           (web/start-web-service {:port 3000}
             (partial current-state-handler event-service width height)
