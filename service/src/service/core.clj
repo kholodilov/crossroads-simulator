@@ -1,11 +1,10 @@
 (ns service.core
-  (:require [org.httpkit.server :as http-kit]
-            [common.cli         :as cli]
+  (:require [ruiyun.tools.timer :as timer]
+            [clojure.tools.cli :as cli]
             [common.events      :as events]
             [common.service     :as service]
-            [common.messaging   :as messaging]
-            [ruiyun.tools.timer :as timer]
-            [service.web        :as web]))
+            [service.web        :as web]
+            [switchlights-control.core :as switchlights]))
 
 (defn run-timer [event-service period]
   (let [time (atom 0)
@@ -18,24 +17,27 @@
       (service/build-service :stop-fn #(timer/cancel! timer))
     ))
 
-(defn run [width height queue]
+(defn run-simulation [width height]
   (let [event-service (events/build-esper-service "CrossroadsSimulator")
         timer-service (run-timer event-service 100)
-        web-service (web/start-web-service event-service {:port 3000})
-        messaging-conn (messaging/connect)]
+        switchlights-service (switchlights/run-switchlights event-service width height "1 sec")
+        web-service (web/start-web-service event-service {:port 3000})]
 
-    (messaging/subscribe messaging-conn queue
-      (fn [event-attrs] (events/trigger-event event-service events/SwitchEvent event-attrs)))
+    (service/build-service
+      :stop-fn #(do
+        (service/stop web-service)
+        (service/stop switchlights-service)
+        (service/stop timer-service)
+        (service/stop event-service)))))
 
-    #(do
-      (messaging/disconnect messaging-conn)
-      (service/stop web-service)
-      (service/stop timer-service)
-      (service/stop event-service))
-))
-
-(def cli-options [])
+(def cli-options
+  [["-w" "--width n" "Width"
+    :default 4
+    :parse-fn #(Integer/parseInt %)]
+   ["-h" "--height n" "Height"
+    :default 3
+    :parse-fn #(Integer/parseInt %)]])
 
 (defn -main [& args]
-  (let [{:keys [width height switch-events-queue]} (cli/parse-opts args cli-options)]
-    (run width height switch-events-queue)))
+  (let [{:keys [width height]} (:options (cli/parse-opts args cli-options))]
+    (run-simulation width height)))

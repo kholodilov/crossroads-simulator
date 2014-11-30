@@ -3,41 +3,25 @@
             [service.core]
             [common.events    :as events]
             [common.service   :as service]
-            [gniazdo.core     :as ws]
-            [langohr.core     :as rmq]
-            [langohr.channel  :as lch]
-            [langohr.basic    :as lb]
-            [langohr.queue    :as lq]))
-
-(def default-exchange "")
+            [gniazdo.core     :as ws]))
 
 (defn handler [atom]
   #(swap! atom conj (read-string %)))
 
-(deftest ^:integration test-query-websocket
-  (let [queue "test-query-websocket"
-        conn (rmq/connect)
-        ch (lch/open conn)
-        _ (lq/declare ch queue)
-        _ (lq/purge ch queue)
-        stop-service (service.core/run 2 2 queue)
+(deftest ^:integration test-simulation
+  (let [simulation (service.core/run-simulation 2 2)
         query-result (atom [])
         query-ws (ws/connect "ws://localhost:3000/query"
-                    :on-receive (handler query-result))
-        switch-events [{:x 0 :y 0 :t 1 :direction "ns"}
-                       {:x 0 :y 1 :t 2 :direction "we"}
-                       {:x 1 :y 0 :t 3 :direction "ns"}
-                       {:x 1 :y 1 :t 4 :direction "we"}]]
-    (ws/send-msg query-ws "select * from SwitchEvent")
+                    :on-receive (handler query-result))]
+
+    (ws/send-msg query-ws "select * from SwitchEvent.std:unique(x,y)")
     (Thread/sleep 1000)
-    (doseq [event switch-events]
-      (lb/publish ch default-exchange queue (pr-str event)))
-    (Thread/sleep 1000)
+
     (ws/close query-ws)
-    (stop-service)
-    (rmq/close ch)
-    (rmq/close conn)
-    (is (= (set @query-result) (set switch-events)))))
+    (service/stop simulation)
+
+    (println @query-result)
+    (is (= 4 (count @query-result)))))
 
 (deftest ^:integration test-timer-service
   (let [event-service (events/build-esper-service "test-timer-service")
