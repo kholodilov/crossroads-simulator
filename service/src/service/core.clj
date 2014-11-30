@@ -7,42 +7,6 @@
             [ruiyun.tools.timer :as timer]
             [service.web        :as web]))
 
-(defn current-state-handler [event-service width height]
-  (let [statement (events/create-statement event-service "select * from SwitchEvent.std:unique(x,y)")
-        switch-times (events/pull-events event-service statement)]
-    (events/destroy-statement event-service statement)
-    {:width width :height height :switch-times switch-times}))
-
-(defn query-results-to-channel [channel results]
-  (doseq [result results]
-    (http-kit/send! channel (pr-str result))))
-
-(defn query-handler [event-service request]
-  (http-kit/with-channel request channel
-
-    (println "query: channel opened")
-
-    (let [listener (partial query-results-to-channel channel)
-          cleanup-fn (atom #())]
-      (http-kit/on-receive channel
-        (fn [query]
-          (@cleanup-fn)
-          (println (str "Starting query: " query))
-          (let [statement (events/create-statement event-service query)]
-            (events/subscribe event-service statement listener)
-            (reset! cleanup-fn
-              #(do
-                (println (str "Stopping query: " query))
-                (events/destroy-statement event-service statement)))
-            )))
-
-      (http-kit/on-close channel
-        (fn [status]
-          (@cleanup-fn)
-          (println "query: channel closed")))
-    )
-))
-
 (defn run-timer [event-service period]
   (let [time (atom 0)
         timer (timer/timer)
@@ -57,10 +21,7 @@
 (defn run [width height queue]
   (let [event-service (events/build-esper-service "CrossroadsSimulator")
         timer-service (run-timer event-service 100)
-        stop-web-service
-          (web/start-web-service {:port 3000}
-            (partial current-state-handler event-service width height)
-            (partial query-handler event-service))
+        web-service (web/start-web-service event-service {:port 3000})
         messaging-conn (messaging/connect)]
 
     (messaging/subscribe messaging-conn queue
@@ -68,7 +29,7 @@
 
     #(do
       (messaging/disconnect messaging-conn)
-      (stop-web-service)
+      (service/stop web-service)
       (service/stop timer-service)
       (service/stop event-service))
 ))
