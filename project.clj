@@ -12,7 +12,6 @@
       kholodilov.crossroads-simulator :version
     }
     :inherited {
-      :repositories {"local" ~(str (.toURI (java.io.File. "lib")))}
       :test-selectors ^:replace {
         :default (fn [m] (not (:integration m)))
         :itest (fn [m] true)

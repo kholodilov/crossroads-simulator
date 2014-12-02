@@ -114,29 +114,28 @@
         (update-tl-remaining-duration conn id duration)))
     (timer/run-task! #(switch-lights conn timer width height program*) :by timer :delay duration)))
 
-(defn run-sumo [simulation-conf step-length]
-  (if-let [sumo-home (get (System/getenv) "SUMO_HOME")]
-    (let [step-length-seconds (str (/ step-length 1000.))
-          conn (doto 
-                  (SumoTraciConnection. (str sumo-home "/bin/sumo-gui") simulation-conf)
-                  (.addOption "step-length" step-length-seconds)
-                  (.addOption "start" nil))
-          timer (timer/timer)]
-      (.runServer conn)
-      (timer/run-task! #(.do_timestep conn) :period step-length :by timer)
-      (service/build-service
-        :conn conn
-        :stop-fn (fn []
-          (timer/cancel! timer)
-          (.close conn))
-      ))
-    (throw (RuntimeException. "SUMO_HOME is not defined"))))
+(defn run-sumo [sumo-home simulation-conf step-length]
+  (let [step-length-seconds (str (/ step-length 1000.))
+        conn (doto 
+                (SumoTraciConnection. (str sumo-home "/bin/sumo-gui") simulation-conf)
+                (.addOption "step-length" step-length-seconds)
+                (.addOption "start" nil))
+        timer (timer/timer)]
+    (.runServer conn)
+    (timer/run-task! #(.do_timestep conn) :period step-length :by timer)
+    (service/build-service
+      :conn conn
+      :stop-fn (fn []
+        (timer/cancel! timer)
+        (.close conn))
+    )))
 
 (defn -main [& args]
   (let [step-length 300
         width 3
         height 2
-        sumo (run-sumo "simulation_grid/config.sumo.cfg" step-length)
+        [sumo-home] args
+        sumo (run-sumo sumo-home "simulation_grid/config.sumo.cfg" step-length)
         sumo-conn (:conn sumo)]
     (timer/run-task! #(add-vehicle sumo-conn) :period (* step-length 2) :delay 1000)
     (timer/run-task! #(report sumo-conn width height) :period (* step-length 10))
