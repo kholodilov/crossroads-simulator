@@ -135,10 +135,8 @@
     (report sumo-conn width height)
     (events/trigger-event event-service events/TotalVehiclesCountEvent {:count (vehicles-count sumo-conn)})))
 
-(defn run-sumo [event-service sumo-home sumo-mode step-length]
-  (let [width 3
-        height 2
-        sumo-conn (start-sumo sumo-home sumo-mode "simulation_grid/config.sumo.cfg" step-length)
+(defn run-sumo [event-service simulation-cfg width height sumo-mode step-length]
+  (let [sumo-conn (start-sumo "/opt/sumo" sumo-mode simulation-cfg step-length)
         timer-statement (events/create-statement event-service (str "select * from pattern[every timer:interval(" step-length "msec)]"))]
     (events/subscribe event-service timer-statement (sumo-step-fn event-service sumo-conn width height))
     (service/build-service

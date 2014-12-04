@@ -10,7 +10,7 @@
         count-event-stmt (events/create-statement event-service "select * from TotalVehiclesCountEvent.std:lastevent()")
         pull-vehicles-count-events (wait-and-pull-events-fn event-service count-event-stmt)
         vehicles-count #(get (first %) :count 0)
-        sumo (sumo/run-sumo event-service "/opt/sumo" :cli 1000)]
+        sumo (sumo/run-sumo event-service "../simulation_grid/config.sumo.cfg" 3 2 :cli 1000)]
 
     (is (= 0 (vehicles-count (pull-vehicles-count-events))))
     (events/do-timestep event-service 1000)

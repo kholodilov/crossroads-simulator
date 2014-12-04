@@ -10,7 +10,8 @@
                  [ruiyun/tools.timer _]
                  [org.clojure/tools.cli "0.3.1"]
                  [kholodilov.crossroads-simulator/common _]
-                 [kholodilov.crossroads-simulator/switchlights-control _]]
+                 [kholodilov.crossroads-simulator/switchlights-control _]
+                 [kholodilov.crossroads-simulator/sumo-integration _]]
   :plugins [[lein-modules "0.3.6"]]
   :profiles {:test 
               {:dependencies [[stylefruits/gniazdo "0.2.1"]]}}

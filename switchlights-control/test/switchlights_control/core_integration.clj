@@ -9,7 +9,7 @@
   (let [event-service (events/build-esper-service "test-switchlights-control-service")
         switch-events-stmt (events/create-statement event-service "select * from SwitchEvent.win:keepall()")
         pull-switch-events (wait-and-pull-events-fn event-service switch-events-stmt)
-        switchlights-service (SUT/run-switchlights event-service 2 2 "1 sec")]
+        switchlights-service (SUT/run-switchlights event-service 2 2 1000)]
 
     (events/do-timestep event-service 1000)
     (is (= 4 (count (pull-switch-events))))

@@ -9,7 +9,7 @@
   #(swap! atom conj (read-string %)))
 
 (deftest ^:integration test-simulation
-  (let [simulation (service.core/run-simulation 2 2)
+  (let [simulation (service.core/run-simulation "../simulation_grid/config.sumo.cfg" 3 2 :cli)
         query-result (atom [])
         query-ws (ws/connect "ws://localhost:3000/query"
                     :on-receive (handler query-result))]
@@ -21,7 +21,7 @@
     (service/stop simulation)
 
     (println @query-result)
-    (is (= 4 (count @query-result)))))
+    (is (= 6 (count @query-result)))))
 
 (deftest ^:integration test-timer-service
   (let [event-service (events/build-esper-service "test-timer-service")
