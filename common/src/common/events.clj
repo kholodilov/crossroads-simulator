@@ -12,9 +12,10 @@
   (current-time [this]))
 
 (esper/defevent SwitchEvent [x :int y :int t :int direction :string])
+(esper/defevent TotalVehiclesCountEvent [count :int])
 
 (defn build-esper-service [name]
-  (let [esper-conf (esper/create-configuration (esper/xml-configuration) [SwitchEvent])
+  (let [esper-conf (esper/create-configuration (esper/xml-configuration) [SwitchEvent TotalVehiclesCountEvent])
         esper-service (esper/create-service name esper-conf)]
     (esper/send-current-time-event esper-service 0)
     (reify

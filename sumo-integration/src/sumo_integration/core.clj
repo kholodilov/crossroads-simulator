@@ -1,5 +1,5 @@
 (ns sumo-integration.core
-  (:require [ruiyun.tools.timer :as timer]
+  (:require [common.events  :as events]
             [common.service :as service])
   (:import [it.polito.appeal.traci SumoTraciConnection]
            [de.tudresden.sumo.cmd Vehicle Simulation Lane Trafficlights]))
@@ -52,10 +52,9 @@
 
 (defn add-vehicle [conn]
   (let [t (simulation-time conn)
-        add-time (+ t 1000)
         route (str "s" (rand-int 10))
-        id (str "v" add-time "_" (rand-int 100))]
-    (.do_job_set conn (Vehicle/add id "car" route add-time 0 13.8 0))
+        id (str "v" t "_" (rand-int 100))]
+    (.do_job_set conn (Vehicle/add id "car" route t 0 13.8 0))
   ))
 
 (defn format-percentage [fraction]
@@ -86,33 +85,33 @@
   ))
 )
 
-(defn tl-monkey [conn width height]
-  (let [x (rand-nth (coord-range width))
-        y (rand-nth (coord-range height))
-        id (tl-id x y)
-        tl (retrieve-tl conn id)
-        duration (:remaining-duration tl)
-        new-duration (+ 3000 duration)]
-    (update-tl-remaining-duration conn id new-duration)
-    (println (str "### tl-monkey: " id " " duration "->" new-duration))))
+; (defn tl-monkey [conn width height]
+;   (let [x (rand-nth (coord-range width))
+;         y (rand-nth (coord-range height))
+;         id (tl-id x y)
+;         tl (retrieve-tl conn id)
+;         duration (:remaining-duration tl)
+;         new-duration (+ 3000 duration)]
+;     (update-tl-remaining-duration conn id new-duration)
+;     (println (str "### tl-monkey: " id " " duration "->" new-duration))))
 
-(def tl-program 
-  (flatten (repeat [{:state "rrrGGgrrrGGg" :duration 31000}
-                    {:state "rrryyyrrryyy" :duration 4000}
-                    {:state "GGgrrrGGgrrr" :duration 31000}
-                    {:state "yyyrrryyyrrr" :duration 4000}])))
+; (def tl-program 
+;   (flatten (repeat [{:state "rrrGGgrrrGGg" :duration 31000}
+;                     {:state "rrryyyrrryyy" :duration 4000}
+;                     {:state "GGgrrrGGgrrr" :duration 31000}
+;                     {:state "yyyrrryyyrrr" :duration 4000}])))
 
-(defn switch-lights [conn timer width height program]
-  (let [program-step (first program)
-        state (:state program-step)
-        duration (:duration program-step)
-        program* (rest program)]
-    (doseq [x (coord-range width)
-            y (coord-range height)]
-      (let [id (tl-id x y)]
-        (update-tl-state conn id state)
-        (update-tl-remaining-duration conn id duration)))
-    (timer/run-task! #(switch-lights conn timer width height program*) :by timer :delay duration)))
+; (defn switch-lights [conn timer width height program]
+;   (let [program-step (first program)
+;         state (:state program-step)
+;         duration (:duration program-step)
+;         program* (rest program)]
+;     (doseq [x (coord-range width)
+;             y (coord-range height)]
+;       (let [id (tl-id x y)]
+;         (update-tl-state conn id state)
+;         (update-tl-remaining-duration conn id duration)))
+;     (timer/run-task! #(switch-lights conn timer width height program*) :by timer :delay duration)))
 
 (defn sumo-binary-path [sumo-home sumo-mode]
   (if-let [binary-name ({:gui "sumo-gui", :cli "sumo"} sumo-mode)]
@@ -129,23 +128,21 @@
     (.runServer conn)
     conn))
 
-(defn run-sumo [sumo-home sumo-mode step-length]
+(defn sumo-step-fn [event-service sumo-conn width height]
+  (fn [_]
+    (.do_timestep sumo-conn)
+    (add-vehicle sumo-conn)
+    (report sumo-conn width height)
+    (events/trigger-event event-service events/TotalVehiclesCountEvent {:count (vehicles-count sumo-conn)})))
+
+(defn run-sumo [event-service sumo-home sumo-mode step-length]
   (let [width 3
         height 2
         sumo-conn (start-sumo sumo-home sumo-mode "simulation_grid/config.sumo.cfg" step-length)
-        timer (timer/timer)]
-    (timer/run-task! #(.do_timestep sumo-conn) :by timer :period step-length)
-    (timer/run-task! #(add-vehicle sumo-conn) :by timer :period (* step-length 2) :delay 1000)
-    (timer/run-task! #(report sumo-conn width height) :by timer :period (* step-length 2))
-    (timer/run-task! #(tl-monkey sumo-conn width height) :by timer :period (* step-length 50))
-    (switch-lights sumo-conn timer width height tl-program)
+        timer-statement (events/create-statement event-service (str "select * from pattern[every timer:interval(" step-length "msec)]"))]
+    (events/subscribe event-service timer-statement (sumo-step-fn event-service sumo-conn width height))
     (service/build-service
       :stop-fn (fn []
-        (timer/cancel! timer)
+        (events/destroy-statement event-service timer-statement)
         (.close sumo-conn)))
   ))
-
-(defn -main [& args]
-  (let [step-length 1000
-        [sumo-home sumo-mode] args]
-    (run-sumo sumo-home (keyword sumo-mode) step-length)))
