@@ -7,20 +7,20 @@
 
 (deftest ^:integration test-sumo-service
   (let [event-service (events/build-esper-service "test-sumo-service")
-        count-event-stmt (events/create-statement event-service "select * from TotalVehiclesCountEvent.std:lastevent()")
-        pull-vehicles-count-events (wait-and-pull-events-fn event-service count-event-stmt)
-        vehicles-count #(get (first %) :count 0)
+        vehicles-count-events-stmt (events/create-statement event-service "select * from TotalVehiclesCountEvent.std:lastevent()")
+        pull-vehicles-count-events (wait-and-pull-events-fn event-service vehicles-count-events-stmt)
+        vehicles-count #(get (first (pull-vehicles-count-events)) :count 0)
         sumo (sumo/run-sumo event-service "../simulation_grid/config.sumo.cfg" 3 2 :cli 1000)]
 
-    (is (= 0 (vehicles-count (pull-vehicles-count-events))))
+    (is (= 0 (vehicles-count)))
     (events/do-timestep event-service 1000)
-    (is (= 0 (vehicles-count (pull-vehicles-count-events))))
+    (is (= 0 (vehicles-count)))
     (events/do-timestep event-service 2000)
-    (is (= 1 (vehicles-count (pull-vehicles-count-events))))
+    (is (= 1 (vehicles-count)))
     (events/do-timestep event-service 3000)
-    (is (= 2 (vehicles-count (pull-vehicles-count-events))))
+    (is (= 2 (vehicles-count)))
     (events/do-timestep event-service 4000)
-    (is (= 3 (vehicles-count (pull-vehicles-count-events))))
+    (is (= 3 (vehicles-count)))
 
     (service/stop sumo)
     (service/stop event-service)))

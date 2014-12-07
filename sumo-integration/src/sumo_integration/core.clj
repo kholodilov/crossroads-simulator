@@ -99,12 +99,33 @@
     (.runServer conn)
     conn))
 
-(defn sumo-step-fn [event-service sumo-conn width height]
+(def lanes
+  [{:direction 1 :dx -1 :dy 0} 
+   {:direction 2 :dx  0 :dy 1} 
+   {:direction 3 :dx  1 :dy 0} 
+   {:direction 4 :dx  0 :dy -1}])
+
+(defn lane-id [x y lane]
+  (let [id (tl-id x y)
+        x* (+ x (:dx lane))
+        y* (+ y (:dy lane))
+        id* (tl-id x* y*)]
+    (str id* "to" id "_0")))
+
+(defn report-queues [event-service conn width height]
+  (doseq [x (crossroads/coord-range width)
+          y (crossroads/coord-range height)
+          lane lanes]
+    (events/trigger-event event-service events/QueueEvent
+      {:x x :y y :direction (:direction lane) :queue (vehicles-count conn (lane-id x y lane))})))
+
+(defn sumo-step-fn [event-service conn width height]
   (fn [_]
-    (.do_timestep sumo-conn)
-    (add-vehicle sumo-conn)
-    (report sumo-conn width height)
-    (events/trigger-event event-service events/TotalVehiclesCountEvent {:count (vehicles-count sumo-conn)})))
+    (.do_timestep conn)
+    (add-vehicle conn)
+    (report conn width height)
+    (report-queues event-service conn width height)
+    (events/trigger-event event-service events/TotalVehiclesCountEvent {:count (vehicles-count conn)})))
 
 (defn switch-lights-fn [conn]
   (fn [switch-events]
