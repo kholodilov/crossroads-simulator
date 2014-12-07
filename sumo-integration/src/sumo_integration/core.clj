@@ -85,34 +85,6 @@
   ))
 )
 
-; (defn tl-monkey [conn width height]
-;   (let [x (rand-nth (coord-range width))
-;         y (rand-nth (coord-range height))
-;         id (tl-id x y)
-;         tl (retrieve-tl conn id)
-;         duration (:remaining-duration tl)
-;         new-duration (+ 3000 duration)]
-;     (update-tl-remaining-duration conn id new-duration)
-;     (println (str "### tl-monkey: " id " " duration "->" new-duration))))
-
-; (def tl-program 
-;   (flatten (repeat [{:state "rrrGGgrrrGGg" :duration 31000}
-;                     {:state "rrryyyrrryyy" :duration 4000}
-;                     {:state "GGgrrrGGgrrr" :duration 31000}
-;                     {:state "yyyrrryyyrrr" :duration 4000}])))
-
-; (defn switch-lights [conn timer width height program]
-;   (let [program-step (first program)
-;         state (:state program-step)
-;         duration (:duration program-step)
-;         program* (rest program)]
-;     (doseq [x (coord-range width)
-;             y (coord-range height)]
-;       (let [id (tl-id x y)]
-;         (update-tl-state conn id state)
-;         (update-tl-remaining-duration conn id duration)))
-;     (timer/run-task! #(switch-lights conn timer width height program*) :by timer :delay duration)))
-
 (defn sumo-binary-path [sumo-home sumo-mode]
   (if-let [binary-name ({:gui "sumo-gui", :cli "sumo"} sumo-mode)]
     (str sumo-home "/bin/" binary-name)
@@ -135,11 +107,23 @@
     (report sumo-conn width height)
     (events/trigger-event event-service events/TotalVehiclesCountEvent {:count (vehicles-count sumo-conn)})))
 
+(defn switch-lights-fn [conn]
+  (fn [switch-events]
+    (doseq [switch-event switch-events]
+      (let [state ({"ns" "GGgrrrGGgrrr", "we" "rrrGGgrrrGGg"} (:direction switch-event))
+            duration (* (:t switch-event) 1000)
+            id (tl-id (+ (:x switch-event) 1) (+ (:y switch-event) 1))]
+        (update-tl-state conn id state)
+        (update-tl-remaining-duration conn id duration)))))
+
 (defn run-sumo [event-service simulation-cfg width height sumo-mode step-length]
   (let [sumo-conn (start-sumo "/opt/sumo" sumo-mode simulation-cfg step-length)
-        timer-statement (events/create-statement event-service (str "select * from pattern[every timer:interval(" step-length "msec)]"))]
+        timer-statement (events/create-statement event-service (str "select * from pattern[every timer:interval(" step-length "msec)]"))
+        switchlights-statement (events/create-statement event-service (str "select * from SwitchEvent"))]
     (events/subscribe event-service timer-statement (sumo-step-fn event-service sumo-conn width height))
+    (events/subscribe event-service switchlights-statement (switch-lights-fn sumo-conn))
     (service/build-service
+      :conn sumo-conn
       :stop-fn (fn []
         (events/destroy-statement event-service timer-statement)
         (.close sumo-conn)))
