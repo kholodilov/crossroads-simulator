@@ -5,7 +5,8 @@
             [ring.middleware.reload :refer (wrap-reload)]
             [ring.middleware.edn :refer (wrap-edn-params)]
             [common.events      :as events]
-            [common.service     :as service])
+            [common.service     :as service]
+            [common.crossroads  :as crossroads])
   (:use compojure.core
         compojure.handler
         carica.core))
@@ -15,13 +16,10 @@
    :headers {"Content-Type" "application/edn"}
    :body (pr-str data)})
 
-(defn max-dimension [switch-events dimension]
-  (inc (apply max (or (seq (map dimension switch-events)) [0]))))
-
 (defn current-state-handler [event-service switch-events-statement]
   (let [switch-events (events/pull-events event-service switch-events-statement)
-        width (max-dimension switch-events :x)
-        height (max-dimension switch-events :y)]
+        width (crossroads/max-dimension-size switch-events :x)
+        height (crossroads/max-dimension-size switch-events :y)]
     {:width width :height height :switch-times switch-events}))
 
 (defn query-results-to-channel [channel results]

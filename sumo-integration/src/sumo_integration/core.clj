@@ -1,6 +1,7 @@
 (ns sumo-integration.core
   (:require [common.events  :as events]
-            [common.service :as service])
+            [common.service :as service]
+            [common.crossroads :as crossroads])
   (:import [it.polito.appeal.traci SumoTraciConnection]
            [de.tudresden.sumo.cmd Vehicle Simulation Lane Trafficlights]))
 
@@ -63,14 +64,12 @@
 (defn report-lane [conn lane-id]
   (str lane-id ": " (vehicles-count conn lane-id) " / " (format-percentage (lane-occupancy conn lane-id))))
 
-(defn coord-range [dimension] (range 1 (+ dimension 1)))
-
 (defn tl-id [x y] (str x "/" y))
 
 (defn report-tls [conn width height]
   (clojure.string/join ", "
-    (for [x (coord-range width)
-          y (coord-range height)]
+    (for [x (crossroads/coord-range width)
+          y (crossroads/coord-range height)]
       (retrieve-tl conn (tl-id x y)))))
 
 (defn report [conn width height]
@@ -112,7 +111,7 @@
     (doseq [switch-event switch-events]
       (let [state ({"ns" "GGgrrrGGgrrr", "we" "rrrGGgrrrGGg"} (:direction switch-event))
             duration (* (:t switch-event) 1000)
-            id (tl-id (+ (:x switch-event) 1) (+ (:y switch-event) 1))]
+            id (tl-id (:x switch-event) (:y switch-event))]
         (update-tl-state conn id state)
         (update-tl-remaining-duration conn id duration)))))
 

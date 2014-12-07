@@ -6,7 +6,7 @@
 
 (defn display-switch-crossroads [x y t direction]
   (ef/at
-    (str ".crossroads .crow:nth-child(" (+ y 1) ") .ccol:nth-child(" (+ x 1) ")")
+    (str ".crossroads .crow:nth-child(" y ") .ccol:nth-child(" x ")")
     (ef/do-> 
       (ef/content (str t))
       (ef/set-class "ccol" direction))
