@@ -23,7 +23,7 @@
           mw_mfCounts
           mw_fRules
           mw_modelParams
-          "GA"])
+          "fminbnd"])
       getCycleTimeResult
         (vec (.getCycleTime cc 1 getCycleTimeArgs))
      [mw_cycleTime] getCycleTimeResult
