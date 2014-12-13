@@ -29,10 +29,10 @@
   (let [event-service (events/build-esper-service "test-switchlights")
         sumo (sumo/run-sumo event-service "../simulation_grid/config.sumo.cfg" 3 2 :cli 1000)]
 
-    (events/trigger-event event-service events/SwitchEvent {:x 1 :y 1 :t 50 :direction "ns"})
+    (events/trigger-event event-service events/SwitchEvent {:x 1 :y 1 :phase-time 9 :cycle-time 20 :direction "ns"})
     (Thread/sleep 100)
     (let [tl (sumo/retrieve-tl (:conn sumo) "1/1")]
-      (is (= 50000 (:remaining-duration tl)))
+      (is (= 11000 (:remaining-duration tl)))
       (is (= "GGgrrrGGgrrr" (:state tl))))
 
     (service/stop sumo)
