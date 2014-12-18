@@ -18,10 +18,10 @@
         query-result (atom [])
         query-ws (ws/connect "ws://localhost:3000/query"
                     :on-receive (handler query-result))
-        switch-events [{:x 1 :y 1 :phase-time 9 :cycle-time 20 :direction "ns"}
-                       {:x 1 :y 2 :phase-time 9 :cycle-time 20 :direction "we"}
-                       {:x 2 :y 1 :phase-time 9 :cycle-time 20 :direction "ns"}
-                       {:x 2 :y 2 :phase-time 9 :cycle-time 20 :direction "we"}]]
+        switch-events [{:x 1 :y 1 :phase-time 9 :phase-length 20 :direction "ns"}
+                       {:x 1 :y 2 :phase-time 9 :phase-length 20 :direction "we"}
+                       {:x 2 :y 1 :phase-time 9 :phase-length 20 :direction "ns"}
+                       {:x 2 :y 2 :phase-time 9 :phase-length 20 :direction "we"}]]
 
     (ws/send-msg query-ws "select * from SwitchEvent")
     (Thread/sleep 1000)
@@ -38,10 +38,10 @@
 (deftest ^:integration test-current-state
   (let [event-service (events/build-esper-service "test-current-state")
         web-service (web/start-web-service event-service {:port 3000})
-        switch-events [{:x 1 :y 1 :phase-time 9 :cycle-time 20 :direction "ns"}
-                       {:x 1 :y 2 :phase-time 9 :cycle-time 20 :direction "we"}
-                       {:x 2 :y 1 :phase-time 9 :cycle-time 20 :direction "ns"}
-                       {:x 2 :y 2 :phase-time 9 :cycle-time 20 :direction "we"}]
+        switch-events [{:x 1 :y 1 :phase-time 9 :phase-length 20 :direction "ns"}
+                       {:x 1 :y 2 :phase-time 9 :phase-length 20 :direction "we"}
+                       {:x 2 :y 1 :phase-time 9 :phase-length 20 :direction "ns"}
+                       {:x 2 :y 2 :phase-time 9 :phase-length 20 :direction "we"}]
         result (atom nil)]
 
     (doseq [event switch-events]

@@ -11,7 +11,7 @@
   (do-timestep [this new-time])
   (current-time [this]))
 
-(esper/defevent SwitchEvent [x :int y :int cycle-time :int phase-time :int direction :string])
+(esper/defevent SwitchEvent [x :int y :int phase-length :int phase-time :int direction :string])
 (esper/defevent QueueEvent  [x :int y :int direction :int queue :int])
 (esper/defevent TotalVehiclesCountEvent [count :int])
 

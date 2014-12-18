@@ -1,13 +1,13 @@
 (ns switchlights-control.core
   (:require [common.events      :as events]
             [common.service     :as service]
-            [switchlights-control.gen    :as gen]))
+            [switchlights-control.control    :as control]))
 
 (defn run-switchlights [event-service width height frequency]
-  (let [switch-events (atom (gen/initial-switch-events width height))
+  (let [switch-events (atom (control/initial-switch-events width height))
         generate-and-trigger-switch-events
           (fn [_] 
-            (swap! switch-events gen/next-switch-events)
+            (swap! switch-events control/next-switch-events)
             (doseq [event @switch-events]
               (events/trigger-event event-service events/SwitchEvent event)))
         timer-statement (events/create-statement event-service (str "select * from pattern[every timer:interval(" frequency " msec)]"))]

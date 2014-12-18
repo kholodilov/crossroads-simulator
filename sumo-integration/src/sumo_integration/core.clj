@@ -132,8 +132,8 @@
     (doseq [switch-event switch-events]
       (let [state ({"ns" "GGgrrrGGgrrr", "we" "rrrGGgrrrGGg"} (:direction switch-event))
             phase-time (:phase-time switch-event)
-            cycle-time (:cycle-time switch-event)
-            duration (* (- cycle-time phase-time) 1000)
+            phase-length (:phase-length switch-event)
+            duration (* (- phase-length phase-time) 1000)
             id (tl-id (:x switch-event) (:y switch-event))]
         (update-tl-state conn id state)
         (update-tl-remaining-duration conn id duration)))))
