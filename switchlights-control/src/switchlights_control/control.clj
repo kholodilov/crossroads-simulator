@@ -2,7 +2,6 @@
   (:require [clojure.set]
             [common.crossroads :as crossroads]))
 
-(def max-cycle 30)
 (def directions ["ns" "we"])
 
 (defn flip-direction [direction]
@@ -14,10 +13,10 @@
       {:phase-time (inc phase-time) :phase-length phase-length :direction direction}
       {:phase-time 0                :phase-length phase-length  :direction (flip-direction direction)})))
 
-(defn initial-switch-events [width height] 
+(defn initial-switch-events [width height full-cycle-time] 
     (for [x (crossroads/coord-range width)
           y (crossroads/coord-range height)]
-      {:x x :y y :phase-time (rand-int max-cycle) :phase-length max-cycle :direction (rand-nth directions)}))
+      {:x x :y y :phase-time (rand-int full-cycle-time) :phase-length full-cycle-time :direction (rand-nth directions)}))
 
 (defn next-switch-events [switch-events]
   (map next-state switch-events))

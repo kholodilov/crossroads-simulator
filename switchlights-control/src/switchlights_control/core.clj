@@ -3,8 +3,8 @@
             [common.service     :as service]
             [switchlights-control.control    :as control]))
 
-(defn run-switchlights [event-service width height frequency]
-  (let [switch-events (atom (control/initial-switch-events width height))
+(defn run-switchlights [event-service width height full-cycle-time frequency]
+  (let [switch-events (atom (control/initial-switch-events width height full-cycle-time))
         generate-and-trigger-switch-events
           (fn [_] 
             (swap! switch-events control/next-switch-events)

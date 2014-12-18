@@ -17,11 +17,11 @@
   (with-redefs [rand-int (constantly 9)
                 rand-nth (constantly "ns")]
     (is (= 
-      [{:x 1 :y 1 :phase-time 9 :phase-length max-cycle :direction "ns"}
-       {:x 1 :y 2 :phase-time 9 :phase-length max-cycle :direction "ns"}
-       {:x 2 :y 1 :phase-time 9 :phase-length max-cycle :direction "ns"}
-       {:x 2 :y 2 :phase-time 9 :phase-length max-cycle :direction "ns"}]
-      (initial-switch-events 2 2)))
+      [{:x 1 :y 1 :phase-time 9 :phase-length 40 :direction "ns"}
+       {:x 1 :y 2 :phase-time 9 :phase-length 40 :direction "ns"}
+       {:x 2 :y 1 :phase-time 9 :phase-length 40 :direction "ns"}
+       {:x 2 :y 2 :phase-time 9 :phase-length 40 :direction "ns"}]
+      (initial-switch-events 2 2 40)))
 ))
 
 (deftest next-switch-events-test
