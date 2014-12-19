@@ -3,6 +3,7 @@
             [common.service     :as service]
             [switchlights-control.control    :as control]))
 
+; select q.x, q.y, q.direction, q.queue from pattern[every timer:interval(3 sec)] unidirectional, QueueEvent.std:unique(x, y, direction) as q
 (defn run-switchlights [event-service width height full-cycle-time frequency]
   (let [switch-events (atom (control/initial-switch-events width height full-cycle-time))
         generate-and-trigger-switch-events

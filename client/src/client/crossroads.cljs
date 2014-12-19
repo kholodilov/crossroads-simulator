@@ -8,7 +8,7 @@
   (ef/at
     (str ".crossroads .crow:nth-child(" y ") .ccol:nth-child(" x ")")
     (ef/do-> 
-      (ef/content (str (- phase-length phase-time)))
+      (ef/content (str phase-time "/" phase-length))
       (ef/set-class "ccol" direction))
   ))
 
