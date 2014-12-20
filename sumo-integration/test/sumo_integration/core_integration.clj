@@ -32,7 +32,7 @@
     (events/trigger-event event-service events/SwitchEvent {:x 1 :y 1 :phase-time 9 :phase-length 20 :direction "ns"})
     (Thread/sleep 100)
     (let [tl (sumo/retrieve-tl (:conn sumo) "1/1")]
-      (is (= 12000 (:remaining-duration tl)))
+      (is (= 11000 (:remaining-duration tl)))
       (is (= "GGgrrrGGgrrr" (:state tl))))
 
     (service/stop sumo)
