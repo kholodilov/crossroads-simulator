@@ -7,7 +7,7 @@
 
 (def calcModelArgs
   (object-array [
-    "model.RLSM.error.0.12.date.2013-10-08.mat"
+    "../../model.RLSM.error.0.12.date.2013-10-08.mat"
     ""
     "RLSM"]))
 (def calcModelResult (vec (.calculateCrossroadModel cc 4 calcModelArgs)))

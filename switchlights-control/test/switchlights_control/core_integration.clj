@@ -11,6 +11,9 @@
         pull-switch-events (wait-and-pull-events-fn event-service switch-events-stmt)
         switchlights-service (SUT/run-switchlights event-service 2 2 40 1000)]
 
+    (Thread/sleep 3000)
+    (println "INFO: starting switchlights-control service test")
+
     (events/do-timestep event-service 1000)
     (is (= 4 (count (pull-switch-events))))
 

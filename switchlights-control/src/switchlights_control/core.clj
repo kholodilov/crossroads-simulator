@@ -5,7 +5,7 @@
 
 (defn run-switchlights [event-service width height full-cycle-time frequency]
   (let [switch-events (atom (control/initial-switch-events width height full-cycle-time))
-        next-phase-length-fn (control/build-next-phase-length-const-fn full-cycle-time)
+        next-phase-length-fn (control/build-next-phase-length-controlled-fn full-cycle-time)
         queues-statement (events/create-statement event-service "select * from QueueEvent.std:unique(x, y, direction)")
         generate-and-trigger-switch-events
           (fn [_]

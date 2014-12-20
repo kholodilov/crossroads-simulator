@@ -3,10 +3,11 @@
   <groupId>traas</groupId>
   <artifactId>traas</artifactId>
   <versioning>
-    <release>r33-1</release>
+    <release>r33-2</release>
     <versions>
       <version>r33-1</version>
+      <version>r33-2</version>
     </versions>
-    <lastUpdated>20141202231031</lastUpdated>
+    <lastUpdated>20141220092040</lastUpdated>
   </versioning>
 </metadata>
