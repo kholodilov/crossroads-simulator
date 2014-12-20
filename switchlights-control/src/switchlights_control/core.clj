@@ -10,10 +10,10 @@
         generate-and-trigger-switch-events
           (fn [_]
             (let [queues (events/pull-events event-service queues-statement)
-                  next-switch-events-fn (control/build-next-switch-events-fn queues full-cycle-time next-phase-length-fn)] 
+                  next-switch-events-fn (control/build-next-switch-events-fn queues full-cycle-time frequency next-phase-length-fn)] 
               (swap! switch-events next-switch-events-fn)
               (doseq [event @switch-events]
                 (events/trigger-event event-service events/SwitchEvent event))))
-        timer-statement (events/create-statement event-service (str "select * from pattern[every timer:interval(" frequency " msec)]"))]
+        timer-statement (events/create-statement event-service (str "select * from pattern[every timer:interval(" frequency " sec)]"))]
     (events/subscribe event-service timer-statement generate-and-trigger-switch-events)
     (service/build-service :stop-fn #(events/destroy-statement event-service timer-statement))))

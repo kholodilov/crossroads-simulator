@@ -9,7 +9,7 @@
   (let [event-service (events/build-esper-service "test-switchlights-control-service")
         switch-events-stmt (events/create-statement event-service "select * from SwitchEvent.win:keepall()")
         pull-switch-events (wait-and-pull-events-fn event-service switch-events-stmt)
-        switchlights-service (SUT/run-switchlights event-service 2 2 40 1000)]
+        switchlights-service (SUT/run-switchlights event-service 2 2 40 1)]
 
     (Thread/sleep 3000)
     (println "INFO: starting switchlights-control service test")

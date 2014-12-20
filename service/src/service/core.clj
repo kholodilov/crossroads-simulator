@@ -18,11 +18,11 @@
       (service/build-service :stop-fn #(timer/cancel! timer))
     ))
 
-(defn run-simulation [simulation-cfg width height full-cycle-time sumo-mode]
+(defn run-simulation [simulation-cfg width height full-cycle-time switchlight-frequency sumo-mode]
   (let [event-service (events/build-esper-service "CrossroadsSimulator")
         timer-service (run-timer event-service 100)
         sumo-service (sumo/run-sumo event-service simulation-cfg width height sumo-mode 1000)
-        switchlights-service (switchlights/run-switchlights event-service width height full-cycle-time 1000)
+        switchlights-service (switchlights/run-switchlights event-service width height full-cycle-time switchlight-frequency)
         web-service (web/start-web-service event-service {:port 3000})]
 
     (service/build-service
@@ -43,9 +43,12 @@
    ["-c" "--full-cycle-time n" "Full cycle time"
     :default 40
     :parse-fn #(Integer/parseInt %)]
+   ["-f" "--switchlight-frequency n" "Full cycle time"
+    :default 1
+    :parse-fn #(Integer/parseInt %)]
    ["-s" "--simulation-cfg n" "Simulation config"
     :default "../simulation_grid/config.sumo.cfg"]])
 
 (defn -main [& args]
-  (let [{:keys [simulation-cfg width height full-cycle-time]} (:options (cli/parse-opts args cli-options))]
-    (run-simulation simulation-cfg width height full-cycle-time :gui)))
+  (let [{:keys [simulation-cfg width height full-cycle-time switchlight-frequency]} (:options (cli/parse-opts args cli-options))]
+    (run-simulation simulation-cfg width height full-cycle-time switchlight-frequency :gui)))
