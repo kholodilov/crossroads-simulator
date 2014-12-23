@@ -21,7 +21,7 @@
 (defn run-simulation [simulation-cfg width height max-phase-length phase-update-frequency sumo-mode]
   (let [event-service (events/build-esper-service "CrossroadsSimulator")
         timer-service (run-timer event-service 100)
-        sumo-service (sumo/run-sumo event-service simulation-cfg width height sumo-mode 1000)
+        sumo-service (sumo/run-sumo event-service simulation-cfg width height sumo-mode 500)
         switchlights-service (switchlights/run-switchlights event-service width height max-phase-length phase-update-frequency)
         web-service (web/start-web-service event-service {:port 3000})]
 

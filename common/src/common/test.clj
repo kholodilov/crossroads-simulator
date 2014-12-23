@@ -4,5 +4,5 @@
 
 (defn wait-and-pull-events-fn [event-service stmt]
   (fn []
-    (Thread/sleep 100) ; wait a moment
+    (Thread/sleep 150) ; wait a moment
     (events/pull-events event-service stmt)))

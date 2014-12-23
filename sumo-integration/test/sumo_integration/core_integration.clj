@@ -10,7 +10,7 @@
         vehicles-count-events-stmt (events/create-statement event-service "select * from TotalVehiclesCountEvent.std:lastevent()")
         pull-vehicles-count-events (wait-and-pull-events-fn event-service vehicles-count-events-stmt)
         vehicles-count #(get (first (pull-vehicles-count-events)) :count 0)
-        sumo (sumo/run-sumo event-service "../simulation_grid/config.sumo.cfg" 3 2 :cli 1000)]
+        sumo (sumo/run-sumo event-service "../simulation_grid/config.sumo.cfg" 3 2 :cli 100)]
 
     (is (= 0 (vehicles-count)))
     (events/do-timestep event-service 1000)
@@ -27,7 +27,7 @@
 
 (deftest ^:integration test-switchlights
   (let [event-service (events/build-esper-service "test-switchlights")
-        sumo (sumo/run-sumo event-service "../simulation_grid/config.sumo.cfg" 3 2 :cli 1000)]
+        sumo (sumo/run-sumo event-service "../simulation_grid/config.sumo.cfg" 3 2 :cli 100)]
 
     (events/trigger-event event-service events/SwitchEvent {:x 1 :y 1 :phase-time 9 :phase-length 20 :direction "ns"})
     (Thread/sleep 100)

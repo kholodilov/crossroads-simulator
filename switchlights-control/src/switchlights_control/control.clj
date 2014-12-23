@@ -36,12 +36,12 @@
 (defn build-next-state-fn [queue-events max-phase-length phase-update-frequency next-phase-length-fn]
   (fn [{:keys [x y phase-time direction] :as switch-event}]
     (let [queues (queues-for-crossroad x y queue-events)
-          next-phase-time (+ phase-time phase-update-frequency)
-          next-phase-length (if (< phase-time max-phase-length) (next-phase-length-fn phase-time direction queues) 1)]
+          next-phase-time (inc phase-time)
+          next-phase-length (next-phase-length-fn next-phase-time direction queues)]
       (merge switch-event
-        (if (> next-phase-length 1)
-          {:phase-time next-phase-time :phase-length next-phase-length :direction direction}
-          {:phase-time 0               :phase-length next-phase-length :direction (flip-direction direction)})))))
+        (if (>= next-phase-time next-phase-length)
+          {:phase-time 0               :phase-length (next-phase-length-fn 0 (flip-direction direction) queues) :direction (flip-direction direction)}
+          {:phase-time next-phase-time :phase-length next-phase-length :direction direction})))))
 
 (defn build-next-switch-events-fn [queue-events max-phase-length phase-update-frequency next-phase-length-fn]
   (let [next-state-fn (build-next-state-fn queue-events max-phase-length phase-update-frequency next-phase-length-fn)]
