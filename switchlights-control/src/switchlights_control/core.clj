@@ -10,7 +10,7 @@
         generate-and-trigger-switch-events
           (fn [_]
             (let [queues (events/pull-events event-service queues-statement)
-                  next-switch-events-fn (control/build-next-switch-events-fn queues max-phase-length phase-update-frequency next-phase-length-fn)] 
+                  next-switch-events-fn (control/build-next-switch-events-fn queues phase-update-frequency next-phase-length-fn)] 
               (swap! switch-events next-switch-events-fn)
               (doseq [event @switch-events]
                 (events/trigger-event event-service events/SwitchEvent event))))

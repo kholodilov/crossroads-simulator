@@ -8,6 +8,8 @@
 )
 
 (deftest next-state-test
+  ;(with-redefs [queues-for-crossroad [1 2 3 4]]
+  ;  (let [next-state-fn (build-next-state-fn [])]))
   (is (= {:x 1 :y 1 :phase-time 10 :phase-length 20 :direction "ns"} (next-state {:x 1 :y 1 :phase-time 9 :phase-length 20 :direction "ns"})))
   (is (= {:phase-time 1 :phase-length 20 :direction "ns"} (next-state {:phase-time 20 :phase-length 20 :direction "we"})))
   (is (= {:phase-time 1 :phase-length 20 :direction "we"} (next-state {:phase-time 20 :phase-length 20 :direction "ns"})))

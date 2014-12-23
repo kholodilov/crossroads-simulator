@@ -5,6 +5,9 @@
 (deftest test-coord-range
   (is (= [1 2 3] (coord-range 3))))
 
+(deftest test-queues-directions
+  (is (= [1 2 3 4] queues-directions)))
+
 (deftest test-max-dimension-size
   (is (= 1 (max-dimension-size [] :x)))
   (is (= 1 (max-dimension-size [] :y)))
