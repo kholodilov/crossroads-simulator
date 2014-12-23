@@ -6,11 +6,15 @@
             [common.service   :as service]
             [common.crossroads :as crossroads]))
 
+(def width 2)
+(def height 2)
+(def max-phase-length 20)
+
 (deftest ^:integration test-switchlights-control-service
   (let [event-service (events/build-esper-service "test-switchlights-control-service")
         switch-events-stmt (events/create-statement event-service "select * from SwitchEvent.win:keepall()")
         pull-switch-events (wait-and-pull-events-fn event-service switch-events-stmt)
-        switchlights-service (SUT/run-switchlights event-service 2 2 40 1)]
+        switchlights-service (SUT/run-switchlights event-service width height max-phase-length {:phase-length-mode "static"})]
 
     (doseq [x (crossroads/coord-range 2)
             y (crossroads/coord-range 2)

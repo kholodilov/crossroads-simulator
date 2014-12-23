@@ -18,11 +18,11 @@
       (service/build-service :stop-fn #(timer/cancel! timer))
     ))
 
-(defn run-simulation [simulation-cfg width height max-phase-length phase-update-frequency sumo-mode]
+(defn run-simulation [simulation-cfg width height max-phase-length switchlights-params sumo-mode]
   (let [event-service (events/build-esper-service "CrossroadsSimulator")
         timer-service (run-timer event-service 100)
         sumo-service (sumo/run-sumo event-service simulation-cfg width height sumo-mode 500)
-        switchlights-service (switchlights/run-switchlights event-service width height max-phase-length phase-update-frequency)
+        switchlights-service (switchlights/run-switchlights event-service width height max-phase-length switchlights-params)
         web-service (web/start-web-service event-service {:port 3000})]
 
     (service/build-service
@@ -46,9 +46,11 @@
    ["-f" "--phase-update-frequency n" "Phase update frequency"
     :default 1
     :parse-fn #(Integer/parseInt %)]
+   [nil "--phase-length-mode mode" "Switchlights phase length mode: static or controlled"
+    :default "static"]
    ["-s" "--simulation-cfg n" "Simulation config"
     :default "../simulation_grid/config.sumo.cfg"]])
 
 (defn -main [& args]
-  (let [{:keys [simulation-cfg width height max-phase-length phase-update-frequency]} (:options (cli/parse-opts args cli-options))]
-    (run-simulation simulation-cfg width height max-phase-length phase-update-frequency :gui)))
+  (let [{:keys [simulation-cfg width height max-phase-length phase-length-mode]} (:options (cli/parse-opts args cli-options))]
+    (run-simulation simulation-cfg width height max-phase-length {:phase-length-mode phase-length-mode} :gui)))

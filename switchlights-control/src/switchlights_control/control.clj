@@ -24,7 +24,7 @@
         (println (str "ERROR: Failed to get queues for (" x ", " y ") from " queue-events-for-crossroad))
         [0 0 0 0]))))
 
-(defn build-next-state-fn [queue-events phase-update-frequency next-phase-length-fn]
+(defn build-next-state-fn [queue-events next-phase-length-fn]
   (fn [{:keys [x y phase-time direction] :as switch-event}]
     (let [queues (queues-for-crossroad x y queue-events)
           next-phase-time (inc phase-time)
@@ -34,8 +34,8 @@
           {:phase-time 0               :phase-length (next-phase-length-fn 0 (flip-direction direction) queues) :direction (flip-direction direction)}
           {:phase-time next-phase-time :phase-length next-phase-length :direction direction})))))
 
-(defn build-next-switch-events-fn [queue-events phase-update-frequency next-phase-length-fn]
-  (let [next-state-fn (build-next-state-fn queue-events phase-update-frequency next-phase-length-fn)]
+(defn build-next-switch-events-fn [queue-events next-phase-length-fn]
+  (let [next-state-fn (build-next-state-fn queue-events next-phase-length-fn)]
     (fn [switch-events]
       (map next-state-fn switch-events))))
 

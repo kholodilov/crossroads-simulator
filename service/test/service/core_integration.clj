@@ -8,8 +8,14 @@
 (defn handler [atom]
   #(swap! atom conj (read-string %)))
 
+(def width 3)
+(def height 2)
+(def max-phase-length 20)
+
 (deftest ^:integration test-simulation
-  (let [simulation (service.core/run-simulation "../simulation_grid/config.sumo.cfg" 3 2 40 1 :cli)
+  (let [simulation (service.core/run-simulation "../simulation_grid/config.sumo.cfg" 
+                                                width height max-phase-length
+                                                {:phase-length-mode "static"} :cli)
         query-result (atom [])
         query-ws (ws/connect "ws://localhost:3000/query"
                     :on-receive (handler query-result))]
