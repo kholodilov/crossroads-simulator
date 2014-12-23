@@ -14,10 +14,10 @@
       {:phase-time (inc phase-time) :phase-length phase-length :direction direction}
       {:phase-time 1                :phase-length phase-length  :direction (flip-direction direction)})))
 
-(defn initial-switch-events [width height full-cycle-time] 
+(defn initial-switch-events [width height max-phase-length] 
     (for [x (crossroads/coord-range width)
           y (crossroads/coord-range height)]
-      {:x x :y y :phase-time (+ (rand-int (/ full-cycle-time 2)) 1) :phase-length (/ full-cycle-time 2) :direction (rand-nth directions)}))
+      {:x x :y y :phase-time (rand-int max-phase-length) :phase-length max-phase-length :direction (rand-nth directions)}))
 
 (defn next-switch-events [switch-events]
   (map next-state switch-events))
@@ -33,48 +33,48 @@
         (println (str "ERROR: Failed to get queues for (" x ", " y ") from " queue-events-for-crossroad))
         [0 0 0 0]))))
 
-(defn build-next-state-fn [queue-events full-cycle-time frequency next-phase-length-fn]
+(defn build-next-state-fn [queue-events max-phase-length phase-update-frequency next-phase-length-fn]
   (fn [{:keys [x y phase-time direction] :as switch-event}]
     (let [queues (queues-for-crossroad x y queue-events)
-          next-phase-time (+ phase-time frequency)
-          next-phase-length (next-phase-length-fn phase-time direction queues)]
+          next-phase-time (+ phase-time phase-update-frequency)
+          next-phase-length (if (< phase-time max-phase-length) (next-phase-length-fn phase-time direction queues) 1)]
       (merge switch-event
-        (if (< next-phase-time next-phase-length)
+        (if (> next-phase-length 1)
           {:phase-time next-phase-time :phase-length next-phase-length :direction direction}
-          {:phase-time 0               :phase-length (- full-cycle-time next-phase-length) :direction (flip-direction direction)})))))
+          {:phase-time 0               :phase-length next-phase-length :direction (flip-direction direction)})))))
 
-(defn build-next-switch-events-fn [queue-events full-cycle-time frequency next-phase-length-fn]
-  (let [next-state-fn (build-next-state-fn queue-events full-cycle-time frequency next-phase-length-fn)]
+(defn build-next-switch-events-fn [queue-events max-phase-length phase-update-frequency next-phase-length-fn]
+  (let [next-state-fn (build-next-state-fn queue-events max-phase-length phase-update-frequency next-phase-length-fn)]
     (fn [switch-events]
       (map next-state-fn switch-events))))
 
-(defn build-next-phase-length-const-fn [full-cycle-time]
+(defn build-next-phase-length-static-fn [max-phase-length]
   (fn [phase-time direction queues]
-    (/ full-cycle-time 2)))
+    max-phase-length))
 
 (def direction-to-green-matrix {"ns" (double-array [0 1 0 1])
                                 "we" (double-array [1 0 1 0])})
 
-(defn build-next-phase-length-controlled-fn [full-cycle-time]
+(defn build-next-phase-length-controlled-fn [max-phase-length]
   (let [cc (CrossroadControl. )
         model-args (object-array ["../model.RLSM.error.0.12.date.2013-10-08.mat" "" "RLSM"])
         model (vec (.calculateCrossroadModel cc 4 model-args))
         [mw_mfParams mw_mfCounts mw_fRules mw_modelParams] model
         next-phase-length-controlled-fn
           (fn [phase-time direction queues]
+            (println (str "Queues: " queues ", phase-time: " phase-time ", direction: " direction ", max-phase-length: " max-phase-length))
             (let [args (object-array [
                           (double-array queues)
-                          (double full-cycle-time)
-                          (double phase-time)
+                          (double max-phase-length)
                           (direction-to-green-matrix direction)
                           mw_mfParams
                           mw_mfCounts
                           mw_fRules
                           mw_modelParams
                           "fminbnd"])
-                  [mw_cycleTime] (vec (.getCycleTime cc 1 args))
-                  next-phase-length (.getInt mw_cycleTime)]
-              (.dispose mw_cycleTime)
+                  [mw_PhaseLength] (vec (.getPhaseLength cc 1 args))
+                  next-phase-length (.getInt mw_PhaseLength)]
+              (.dispose mw_PhaseLength)
               next-phase-length))]
     (println "INFO: CrossroadControl model ready")
     (next-phase-length-controlled-fn 1 "ns" [1 2 3 4])

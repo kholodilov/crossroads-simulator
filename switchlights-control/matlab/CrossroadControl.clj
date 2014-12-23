@@ -2,8 +2,15 @@
 (import com.mathworks.toolbox.javabuilder.MWNumericArray)
 (import com.mathworks.toolbox.javabuilder.MWClassID)
 
+(require '[clojure.reflect :as r])
+(use '[clojure.pprint :only [print-table]])
+
 (println "Hello")
 (def cc (CrossroadControl. ))
+
+(print-table
+  (sort-by :name 
+    (filter :exception-types (:members (r/reflect cc)))))
 
 (def calcModelArgs
   (object-array [
