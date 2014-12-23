@@ -29,15 +29,6 @@
       (initial-switch-events 2 2 20)))
 ))
 
-(deftest next-switch-events-test
-  (is (=
-    [{:x 1 :y 1 :phase-time 10 :phase-length 20 :direction "ns"}
-     {:x 1 :y 2 :phase-time 10 :phase-length 20 :direction "we"}]
-    (next-switch-events
-      [{:x 1 :y 1 :phase-time 9 :phase-length 20 :direction "ns"}
-       {:x 1 :y 2 :phase-time 9 :phase-length 20  :direction "we"}])))
-)
-
 (deftest queues-for-crossroad-test
   (let [no-queue-events []
         some-queue-events 

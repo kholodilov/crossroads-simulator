@@ -8,19 +8,10 @@
 (defn flip-direction [direction]
   (first (clojure.set/difference (set directions) (list direction))))
 
-(defn next-state [{:keys [phase-length phase-time direction] :as state}]
-  (merge state
-    (if (< phase-time phase-length)
-      {:phase-time (inc phase-time) :phase-length phase-length :direction direction}
-      {:phase-time 1                :phase-length phase-length  :direction (flip-direction direction)})))
-
 (defn initial-switch-events [width height max-phase-length] 
     (for [x (crossroads/coord-range width)
           y (crossroads/coord-range height)]
       {:x x :y y :phase-time (rand-int max-phase-length) :phase-length max-phase-length :direction (rand-nth directions)}))
-
-(defn next-switch-events [switch-events]
-  (map next-state switch-events))
 
 (defn queues-for-crossroad [x y queue-events]
   (let [queue-events-filter #(and (= (:x %) x) (= (:y %) y))
