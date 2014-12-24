@@ -2,15 +2,8 @@
 (import com.mathworks.toolbox.javabuilder.MWNumericArray)
 (import com.mathworks.toolbox.javabuilder.MWClassID)
 
-(require '[clojure.reflect :as r])
-(use '[clojure.pprint :only [print-table]])
-
 (println "Hello")
 (def cc (CrossroadControl. ))
-
-(print-table
-  (sort-by :name 
-    (filter :exception-types (:members (r/reflect cc)))))
 
 (def calcModelArgs
   (object-array [
@@ -20,24 +13,22 @@
 (def calcModelResult (vec (.calculateCrossroadModel cc 4 calcModelArgs)))
 
 (let [[mw_mfParams mw_mfCounts mw_fRules mw_modelParams] calcModelResult
-      getCycleTimeArgs
+      getPhaseLengthArgs
         (object-array [
-          (double-array [4 3 2 1])
-          40.0
-          10.0
+          (double-array [40 3 20 1])
+          20.0
           (double-array [1 0 1 0])
           mw_mfParams
           mw_mfCounts
           mw_fRules
-          mw_modelParams
-          "fminbnd"])
-      getCycleTimeResult
-        (vec (.getCycleTime cc 1 getCycleTimeArgs))
-     [mw_cycleTime] getCycleTimeResult
-     cycleTime (.getInt mw_cycleTime)]
+          mw_modelParams])
+      getPhaseLengthResult
+        (vec (.getPhaseLength cc 1 getPhaseLengthArgs))
+     [mw_phaseLength] getPhaseLengthResult
+     phaseLength (.getDouble mw_phaseLength)]
 
-    (println "cycleTime: " cycleTime)
-    (doseq [mw getCycleTimeResult] (.dispose mw)))
+    (println "phaseLength: " phaseLength)
+    (doseq [mw getPhaseLengthResult] (.dispose mw)))
 
 (doseq [mw calcModelResult] (.dispose mw))
 

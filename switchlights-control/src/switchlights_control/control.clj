@@ -56,7 +56,6 @@
         [mw_mfParams mw_mfCounts mw_fRules mw_modelParams] model
         phase-length-controlled-fn
           (fn [phase-time direction queues]
-            (println (str "Queues: " queues ", phase-time: " phase-time ", direction: " direction ", max-phase-length: " max-phase-length))
             (let [args (object-array [
                           (double-array queues)
                           (double max-phase-length)
@@ -64,10 +63,9 @@
                           mw_mfParams
                           mw_mfCounts
                           mw_fRules
-                          mw_modelParams
-                          "fminbnd"])
+                          mw_modelParams])
                   [mw_PhaseLength] (vec (.getPhaseLength cc 1 args))
-                  phase-length (.getInt mw_PhaseLength)]
+                  phase-length (Math/round (.getDouble mw_PhaseLength))]
               (.dispose mw_PhaseLength)
               phase-length))]
     (println "INFO: CrossroadControl model ready")

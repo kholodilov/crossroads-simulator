@@ -2,6 +2,7 @@
   (:require [clojure.test :refer :all]
             [common.test :refer :all]
             [switchlights-control.core :as SUT]
+            [switchlights-control.control :as control]
             [common.events    :as events]
             [common.service   :as service]
             [common.crossroads :as crossroads]))
@@ -35,3 +36,6 @@
 
     (service/stop switchlights-service)
     (service/stop event-service)))
+
+(deftest phase-length-controlled-smoke-test
+  (control/build-phase-length-controlled-fn max-phase-length))
