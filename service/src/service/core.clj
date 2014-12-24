@@ -48,9 +48,13 @@
     :parse-fn #(Integer/parseInt %)]
    [nil "--phase-length-mode mode" "Switchlights phase length mode: static or controlled"
     :default "static"]
+   [nil "--phase-length-update-mode mode" "Switchlights phase length update mode: frequent or on-switch"
+    :default "frequent"]
    ["-s" "--simulation-cfg n" "Simulation config"
     :default "../simulation_grid/config.sumo.cfg"]])
 
 (defn -main [& args]
-  (let [{:keys [simulation-cfg width height max-phase-length phase-length-mode]} (:options (cli/parse-opts args cli-options))]
-    (run-simulation simulation-cfg width height max-phase-length {:phase-length-mode phase-length-mode} :gui)))
+  (let [{:keys [simulation-cfg width height max-phase-length phase-length-mode phase-length-update-mode]} (:options (cli/parse-opts args cli-options))]
+    (run-simulation simulation-cfg width height max-phase-length
+                    {:phase-length-mode phase-length-mode :phase-length-update-mode phase-length-update-mode}
+                    :gui)))

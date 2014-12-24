@@ -3,20 +3,28 @@
             [common.service     :as service]
             [switchlights-control.control    :as control]))
 
-(def select-next-phase-length-fn-builder
+(def select-phase-length-fn-builder
   {"static"
-      control/build-next-phase-length-static-fn
+      control/build-phase-length-static-fn
    "controlled"
-      control/build-next-phase-length-controlled-fn})
+      control/build-phase-length-controlled-fn})
 
-(defn run-switchlights [event-service width height max-phase-length {:keys [phase-length-mode] :as params}]
+(def select-next-phase-length-update-fn-builder
+  {"frequent"
+      control/build-next-phase-length-update-frequent-fn
+   "on-switch"
+      control/build-next-phase-length-update-on-switch-fn})
+
+(defn run-switchlights [event-service width height max-phase-length {:keys [phase-length-mode phase-length-update-mode] :as params}]
   (let [switch-events (atom (control/initial-switch-events width height max-phase-length))
-        next-phase-length-fn ((select-next-phase-length-fn-builder phase-length-mode) max-phase-length)
+        phase-length-fn ((select-phase-length-fn-builder phase-length-mode) max-phase-length)
+        next-phase-length-update-fn
+                        ((select-next-phase-length-update-fn-builder phase-length-update-mode) params)
         queues-statement (events/create-statement event-service "select * from QueueEvent.std:unique(x, y, direction)")
         generate-and-trigger-switch-events
           (fn [_]
             (let [queues (events/pull-events event-service queues-statement)
-                  next-switch-events-fn (control/build-next-switch-events-fn queues next-phase-length-fn)] 
+                  next-switch-events-fn (control/build-next-switch-events-fn queues phase-length-fn next-phase-length-update-fn)] 
               (swap! switch-events next-switch-events-fn)
               (doseq [event @switch-events]
                 (events/trigger-event event-service events/SwitchEvent event))))

@@ -10,9 +10,10 @@
 (deftest next-state-test
   (with-redefs [queues-for-crossroad (constantly [1 2 3 4])]
     (let [queue-events []
-          next-phase-length-fn
+          phase-length-fn
             (fn [phase-time direction queues] ({"ns" 20 "we" 25} direction))
-          next-state-fn (build-next-state-fn queue-events next-phase-length-fn)]
+          next-phase-length-update-fn (constantly 1)
+          next-state-fn (build-next-state-fn queue-events phase-length-fn next-phase-length-update-fn)]
       (is (= {:x 1 :y 1 :phase-time 10 :phase-length 20 :direction "ns"} (next-state-fn {:x 1 :y 1 :phase-time 9 :phase-length 30 :direction "ns"})))
       (is (= {:phase-time 0 :phase-length 25 :direction "we"} (next-state-fn {:phase-time 19 :phase-length 30 :direction "ns"})))
 )))
