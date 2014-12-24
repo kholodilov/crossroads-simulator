@@ -15,7 +15,7 @@
 (deftest ^:integration test-simulation
   (let [simulation (service.core/run-simulation "../simulation_grid/config.sumo.cfg" 
                                                 width height max-phase-length
-                                                {:phase-length-mode "static" :phase-length-update-mode "frequent"}
+                                                {:phase-length-mode "static" :phase-length-update-mode "on-switch"}
                                                 :cli)
         query-result (atom [])
         query-ws (ws/connect "ws://localhost:3000/query"

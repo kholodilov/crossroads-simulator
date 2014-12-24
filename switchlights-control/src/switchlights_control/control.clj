@@ -24,18 +24,21 @@
         (println (str "ERROR: Failed to get queues for (" x ", " y ") from " queue-events-for-crossroad))
         [0 0 0 0]))))
 
-(defn build-next-state-fn [queue-events phase-length-fn next-phase-length-update-fn]
-  (fn [{:keys [x y direction phase-time phase-length next-phase-length-update] :as switch-event}]
+(defn build-next-state-fn [queue-events phase-length-fn update-phase-length-fn?]
+  (fn [{:keys [x y direction phase-time phase-length] :as switch-event}]
     (let [queues (queues-for-crossroad x y queue-events)
           new-phase-time (inc phase-time)
-          new-phase-length (phase-length-fn new-phase-time direction queues)]
+          new-phase-length
+            (if (update-phase-length-fn? switch-event)
+              (phase-length-fn new-phase-time direction queues)
+              phase-length)]
       (merge switch-event
         (if (>= new-phase-time new-phase-length)
-          {:phase-time 0               :phase-length (phase-length-fn 0 (flip-direction direction) queues) :direction (flip-direction direction)}
+          {:phase-time 0              :phase-length (phase-length-fn 0 (flip-direction direction) queues) :direction (flip-direction direction)}
           {:phase-time new-phase-time :phase-length new-phase-length :direction direction})))))
 
-(defn build-next-switch-events-fn [queue-events phase-length-fn next-phase-length-update-fn]
-  (let [next-state-fn (build-next-state-fn queue-events phase-length-fn next-phase-length-update-fn)]
+(defn build-next-switch-events-fn [queue-events phase-length-fn update-phase-length-fn?]
+  (let [next-state-fn (build-next-state-fn queue-events phase-length-fn update-phase-length-fn?)]
     (fn [switch-events]
       (map next-state-fn switch-events))))
 
@@ -73,5 +76,9 @@
     phase-length-controlled-fn
   ))
 
-(defn build-next-phase-length-update-frequent-fn [_])
-(defn build-next-phase-length-update-on-switch-fn [_])
+(defn build-update-phase-length-frequent-fn? [{:keys [phase-length-update-frequency]}]
+  (fn [{:keys [phase-time]}]
+    (= 0 (rem phase-time phase-length-update-frequency))))
+
+(defn build-update-phase-length-on-switch-fn? [_]
+  (constantly false))

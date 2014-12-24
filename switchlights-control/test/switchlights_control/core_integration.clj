@@ -14,7 +14,7 @@
   (let [event-service (events/build-esper-service "test-switchlights-control-service")
         switch-events-stmt (events/create-statement event-service "select * from SwitchEvent.win:keepall()")
         pull-switch-events (wait-and-pull-events-fn event-service switch-events-stmt)
-        switchlights-service (SUT/run-switchlights event-service width height max-phase-length {:phase-length-mode "static" :phase-length-update-mode "frequent"})]
+        switchlights-service (SUT/run-switchlights event-service width height max-phase-length {:phase-length-mode "static" :phase-length-update-mode "on-switch"})]
 
     (doseq [x (crossroads/coord-range 2)
             y (crossroads/coord-range 2)

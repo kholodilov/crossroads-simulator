@@ -43,7 +43,7 @@
    ["-l" "--max-phase-length n" "Max phase length"
     :default 40
     :parse-fn #(Integer/parseInt %)]
-   ["-f" "--phase-update-frequency n" "Phase update frequency"
+   ["-f" "--phase-length-update-frequency n" "Phase length update frequency"
     :default 1
     :parse-fn #(Integer/parseInt %)]
    [nil "--phase-length-mode mode" "Switchlights phase length mode: static or controlled"
@@ -54,7 +54,10 @@
     :default "../simulation_grid/config.sumo.cfg"]])
 
 (defn -main [& args]
-  (let [{:keys [simulation-cfg width height max-phase-length phase-length-mode phase-length-update-mode]} (:options (cli/parse-opts args cli-options))]
+  (let [{:keys [simulation-cfg width height max-phase-length phase-length-mode phase-length-update-mode phase-length-update-frequency]}
+          (:options (cli/parse-opts args cli-options))]
     (run-simulation simulation-cfg width height max-phase-length
-                    {:phase-length-mode phase-length-mode :phase-length-update-mode phase-length-update-mode}
+                    {:phase-length-mode phase-length-mode
+                     :phase-length-update-mode phase-length-update-mode
+                     :phase-length-update-frequency phase-length-update-frequency}
                     :gui)))

@@ -7,16 +7,35 @@
   (is (= "we" (flip-direction "ns")))
 )
 
+; need to use https://github.com/clojure/test.check
 (deftest next-state-test
   (with-redefs [queues-for-crossroad (constantly [1 2 3 4])]
-    (let [queue-events []
-          phase-length-fn
-            (fn [phase-time direction queues] ({"ns" 20 "we" 25} direction))
-          next-phase-length-update-fn (constantly 1)
-          next-state-fn (build-next-state-fn queue-events phase-length-fn next-phase-length-update-fn)]
-      (is (= {:x 1 :y 1 :phase-time 10 :phase-length 20 :direction "ns"} (next-state-fn {:x 1 :y 1 :phase-time 9 :phase-length 30 :direction "ns"})))
-      (is (= {:phase-time 0 :phase-length 25 :direction "we"} (next-state-fn {:phase-time 19 :phase-length 30 :direction "ns"})))
-)))
+    (let [phase-length-fn (constantly 20)
+          update-phase-length-fn? (constantly true)
+          next-state-fn (build-next-state-fn [] phase-length-fn update-phase-length-fn?)]
+      (is (= {:x 1 :y 1 :phase-time 10 :phase-length 20 :direction "ns"}
+             (next-state-fn {:x 1 :y 1 :phase-time 9 :phase-length 30 :direction "ns"})))
+      (is (= {:x 1 :y 1 :phase-time 0  :phase-length 20 :direction "we"}
+             (next-state-fn {:x 1 :y 1 :phase-time 19 :phase-length 30 :direction "ns"})))
+      (is (= {:x 1 :y 1 :phase-time 10 :phase-length 20 :direction "ns"}
+             (next-state-fn {:x 1 :y 1 :phase-time 9 :phase-length 10 :direction "ns"}))))
+    (let [phase-length-fn (constantly 20)
+          update-phase-length-fn? (constantly false)
+          next-state-fn (build-next-state-fn [] phase-length-fn update-phase-length-fn?)]
+      (is (= {:x 1 :y 1 :phase-time 10 :phase-length 30 :direction "ns"}
+             (next-state-fn {:x 1 :y 1 :phase-time 9 :phase-length 30 :direction "ns"})))
+      (is (= {:x 1 :y 1 :phase-time 20 :phase-length 30 :direction "ns"}
+             (next-state-fn {:x 1 :y 1 :phase-time 19 :phase-length 30 :direction "ns"})))
+      (is (= {:x 1 :y 1 :phase-time 0  :phase-length 20 :direction "we"}
+             (next-state-fn {:x 1 :y 1 :phase-time 9 :phase-length 10 :direction "ns"}))))
+))
+
+(deftest update-phase-length-frequent-test
+  (let [update-phase-length?
+          (build-update-phase-length-frequent-fn? {:phase-length-update-frequency 3})]
+    (is (= true  (update-phase-length? {:phase-time 3})))
+    (is (= false (update-phase-length? {:phase-time 2})))
+))
 
 (deftest initial-switch-events-test
   (with-redefs [rand-int (constantly 9)
