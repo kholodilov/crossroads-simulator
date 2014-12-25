@@ -9,18 +9,28 @@
   (let [event-service (events/build-esper-service "test-sumo-service")
         vehicles-count-events-stmt (events/create-statement event-service "select * from TotalVehiclesCountEvent.std:lastevent()")
         pull-vehicles-count-events (wait-and-pull-events-fn event-service vehicles-count-events-stmt)
-        vehicles-count #(get (first (pull-vehicles-count-events)) :count 0)
+        vehicles-count #(get (first (pull-vehicles-count-events)) :count)
         sumo (sumo/run-sumo event-service "../simulation_grid/config.sumo.cfg" 3 2 :cli 100)]
 
-    (is (= 0 (vehicles-count)))
+    (is (= nil (vehicles-count)))
     (events/do-timestep event-service 1000)
     (is (= 0 (vehicles-count)))
+    (doseq [event
+        [{:x 1 :y 1 :direction 1}
+         {:x 3 :y 1 :direction 3}
+         {:x 1 :y 2 :direction 1}
+         {:x 3 :y 2 :direction 3}
+         {:x 1 :y 1 :direction 4}
+         {:x 1 :y 2 :direction 2}
+         {:x 2 :y 1 :direction 4}
+         {:x 2 :y 2 :direction 2}
+         {:x 3 :y 1 :direction 4}
+         {:x 3 :y 2 :direction 2}]
+         i (range 90)]
+      (events/trigger-event event-service events/VehicleEvent event))
+    (wait-a-moment)
     (events/do-timestep event-service 2000)
-    (is (= 1 (vehicles-count)))
-    (events/do-timestep event-service 3000)
-    (is (= 2 (vehicles-count)))
-    (events/do-timestep event-service 4000)
-    (is (= 3 (vehicles-count)))
+    (is (= 90 (vehicles-count)))
 
     (service/stop sumo)
     (service/stop event-service)))

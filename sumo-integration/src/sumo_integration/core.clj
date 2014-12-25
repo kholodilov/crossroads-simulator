@@ -51,12 +51,17 @@
 (defn update-tl-state [conn id state]
   (.do_job_set conn (Trafficlights/setRedYellowGreenState id state)))
 
-(defn add-vehicle [conn]
+(def DEPART_TRIGGERED -1)
+(def DEPART_POS_FREE -3)
+(def DEPART_POS_BASE -4)
+(def DEPART_LANE_RANDOM -2)
+
+(defn add-vehicle [conn {:keys [x y direction]}]
   (let [t (simulation-time conn)
-        route (str "s" (rand-int 10))
-        id (str "v" t "_" (rand-int 100))]
-    (.do_job_set conn (Vehicle/add id "car" route t 0 13.8 0))
-  ))
+        route (str "r" x "/" y "_" direction)
+        id (str "v" t "_" route "_" (rand-int 10000000))
+        speed 13.8]
+    (.do_job_set conn (Vehicle/add id "car" route DEPART_TRIGGERED DEPART_POS_FREE speed DEPART_LANE_RANDOM))))
 
 (defn format-percentage [fraction]
   (str (format "%.0f" (* 100 fraction)) "%"))
@@ -122,7 +127,6 @@
 (defn sumo-step-fn [event-service conn width height]
   (fn [_]
     (.do_timestep conn)
-    (add-vehicle conn)
     (report conn width height)
     (report-queues event-service conn width height)
     (events/trigger-event event-service events/TotalVehiclesCountEvent {:count (vehicles-count conn)})))
@@ -138,15 +142,24 @@
         (update-tl-state conn id state)
         (update-tl-remaining-duration conn id duration)))))
 
+(defn add-vehicle-fn [conn]
+  (fn [vehicle-events]
+    (doseq [vehicle-event vehicle-events]
+      (add-vehicle conn vehicle-event))))
+
 (defn run-sumo [event-service simulation-cfg width height sumo-mode step-length]
   (let [sumo-conn (start-sumo "/opt/sumo" sumo-mode simulation-cfg step-length)
         timer-statement (events/create-statement event-service (str "select * from pattern[every timer:interval(" step-length "msec)]"))
-        switchlights-statement (events/create-statement event-service (str "select * from SwitchEvent"))]
+        switchlights-statement (events/create-statement event-service "select * from SwitchEvent")
+        incoming-vehicles-statement (events/create-statement event-service "select * from VehicleEvent")]
     (events/subscribe event-service timer-statement (sumo-step-fn event-service sumo-conn width height))
     (events/subscribe event-service switchlights-statement (switch-lights-fn sumo-conn))
+    (events/subscribe event-service incoming-vehicles-statement (add-vehicle-fn sumo-conn))
     (service/build-service
       :conn sumo-conn
       :stop-fn (fn []
+        (events/destroy-statement event-service incoming-vehicles-statement)
+        (events/destroy-statement event-service switchlights-statement)
         (events/destroy-statement event-service timer-statement)
         (.close sumo-conn)))
   ))

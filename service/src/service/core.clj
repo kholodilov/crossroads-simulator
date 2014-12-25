@@ -4,6 +4,7 @@
             [common.events      :as events]
             [common.service     :as service]
             [service.web        :as web]
+            [service.gen        :as gen]
             [switchlights-control.core :as switchlights]
             [sumo-integration.core :as sumo]))
 
@@ -23,11 +24,13 @@
         timer-service (run-timer event-service 100)
         sumo-service (sumo/run-sumo event-service simulation-cfg width height sumo-mode 500)
         switchlights-service (switchlights/run-switchlights event-service width height max-phase-length switchlights-params)
+        vehicles-service (gen/run-vehicles-generation event-service)
         web-service (web/start-web-service event-service {:port 3000})]
 
     (service/build-service
       :stop-fn #(do
         (service/stop web-service)
+        (service/stop vehicles-service)
         (service/stop switchlights-service)
         (service/stop sumo-service)
         (service/stop timer-service)
