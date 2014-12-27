@@ -2,23 +2,33 @@
   (:require [common.events      :as events]
             [common.service     :as service]))
 
-(defn trigger-vehicle-events-fn [event-service]
+(def vehicle-events-ns
+  [{:x 1 :y 1 :direction 4}
+   {:x 1 :y 2 :direction 2}
+   {:x 2 :y 1 :direction 4}
+   {:x 2 :y 2 :direction 2}
+   {:x 3 :y 1 :direction 4}
+   {:x 3 :y 2 :direction 2}])     
+
+(def vehicle-events-we
+  [{:x 1 :y 1 :direction 1}
+   {:x 3 :y 1 :direction 3}
+   {:x 1 :y 2 :direction 1}
+   {:x 3 :y 2 :direction 3}])
+
+(defn trigger-vehicle-events-fn [event-service events]
   (fn [_]
-    (let [event (rand-nth
-      [{:x 1 :y 1 :direction 1}
-       {:x 3 :y 1 :direction 3}
-       {:x 1 :y 2 :direction 1}
-       {:x 3 :y 2 :direction 3}
-       {:x 1 :y 1 :direction 4}
-       {:x 1 :y 2 :direction 2}
-       {:x 2 :y 1 :direction 4}
-       {:x 2 :y 2 :direction 2}
-       {:x 3 :y 1 :direction 4}
-       {:x 3 :y 2 :direction 2}])]
-      (doseq [i (range 2)] (events/trigger-event event-service events/VehicleEvent event)))))
+    (doseq [event events]
+      (events/trigger-event event-service events/VehicleEvent event))))
 
 (defn run-vehicles-generation [event-service]
-  (let [timer-statement
-          (events/create-statement event-service "select * from pattern[every timer:interval(1 sec)]")]
-    (events/subscribe event-service timer-statement (trigger-vehicle-events-fn event-service))
-    (service/build-service :stop-fn #(events/destroy-statement event-service timer-statement))))
+  (let [timer-statement-ns
+          (events/create-statement event-service "select * from pattern[every timer:interval(4 sec)]")
+        timer-statement-we
+          (events/create-statement event-service "select * from pattern[every timer:interval(8 sec)]")]
+    (events/subscribe event-service timer-statement-ns (trigger-vehicle-events-fn event-service vehicle-events-ns))
+    (events/subscribe event-service timer-statement-we (trigger-vehicle-events-fn event-service vehicle-events-we))
+    (service/build-service
+      :stop-fn (fn []
+        (events/destroy-statement event-service timer-statement-we)
+        (events/destroy-statement event-service timer-statement-ns)))))
