@@ -23,9 +23,11 @@
 
 (defn run-vehicles-generation [event-service]
   (let [timer-statement-ns
-          (events/create-statement event-service "select * from pattern[every timer:interval(4 sec)]")
+          (events/create-statement event-service "select * from pattern[every timer:interval(1 sec)] where Math.pow(Math.sin(current_timestamp), 2) > 0.85")
+          ;(events/create-statement event-service "select * from pattern[every timer:interval(4 sec)]")
         timer-statement-we
-          (events/create-statement event-service "select * from pattern[every timer:interval(8 sec)]")]
+          (events/create-statement event-service "select * from pattern[every timer:interval(1 sec)] where Math.pow(Math.sin(current_timestamp), 2) > 0.962")]
+          ;(events/create-statement event-service "select * from pattern[every timer:interval(8 sec)]")]
     (events/subscribe event-service timer-statement-ns (trigger-vehicle-events-fn event-service vehicle-events-ns))
     (events/subscribe event-service timer-statement-we (trigger-vehicle-events-fn event-service vehicle-events-we))
     (service/build-service
