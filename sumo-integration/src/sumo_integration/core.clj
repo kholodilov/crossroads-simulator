@@ -1,9 +1,8 @@
 (ns sumo-integration.core
   (:require [common.events  :as events]
             [common.service :as service]
-            [sumo-integration.network :as network]
             [common.crossroads :as crossroads]
-            [clojure.core.match :refer (match)])
+            [sumo-integration.network :as network])
   (:import [it.polito.appeal.traci SumoTraciConnection]
            [de.tudresden.sumo.cmd Vehicle Simulation Lane Trafficlights]))
 
@@ -58,37 +57,22 @@
 (def DEPART_POS_BASE -4)
 (def DEPART_LANE_RANDOM -2)
 
-(defn route-id [crossroads-direction]
-  (let [{:keys [x y direction]} crossroads-direction]
-    (str "r" x "/" y "_" direction)))
-
 (defn add-vehicle [conn crossroads-direction]
   (let [t (simulation-time conn)
-        route (route-id crossroads-direction)
+        route (network/route-id crossroads-direction)
         id (str "v" t "_" route "_" (rand-int 10000000))
         speed 13.8]
     (.do_job_set conn (Vehicle/add id "car" route DEPART_TRIGGERED DEPART_POS_FREE speed DEPART_LANE_RANDOM))))
-
-(defn format-percentage [fraction]
-  (str (format "%.0f" (* 100 fraction)) "%"))
-
-(defn report-lane [conn lane-id]
-  (str lane-id ": " (vehicles-count conn lane-id) " / " (format-percentage (lane-occupancy conn lane-id))))
-
-(defn tl-id [x y] (str x "/" y))
 
 (defn report-tls [conn width height]
   (clojure.string/join ", "
     (for [x (crossroads/coord-range width)
           y (crossroads/coord-range height)]
-      (retrieve-tl conn (tl-id x y)))))
+      (retrieve-tl conn (network/crossroads-id x y)))))
 
 (defn report [conn width height]
   (println (str 
     "Vehicles: " (vehicles-count conn)
-    ;", " (report-lane conn "0/0to0/1_0")
-    ;", " (report-lane conn "0/1to0/2_0")
-    ;", " (report-lane conn "0/1to1/1_0")
   ))
   (println (str
     "Traffic lights: " (report-tls conn width height)
@@ -110,42 +94,11 @@
     (.runServer conn)
     conn))
 
-(def neighbour-tl-shift
-  {1 {:dx -1 :dy 0}
-   2 {:dx  0 :dy 1}
-   3 {:dx  1 :dy 0}
-   4 {:dx  0 :dy -1}})
-
-(defn neighbour-tl-id [{:keys [x y direction]}]
-  (let [{:keys [dx dy]} (neighbour-tl-shift direction)
-        x* (+ x dx)
-        y* (+ y dy)]
-    (tl-id x* y*)))
-
-(defn lane-src-id [crossroads-direction width height]
-  (let [min-x (crossroads/min-coord)
-        min-y (crossroads/min-coord)
-        max-x (crossroads/max-coord width)
-        max-y (crossroads/max-coord height)
-        {:keys [x y]} crossroads-direction]
-    (match [crossroads-direction]
-      [{:x min-x :y _     :direction 1}] (str "left"   y)
-      [{:x max-x :y _     :direction 3}] (str "right"  y)
-      [{:x _     :y min-y :direction 4}] (str "bottom" x)
-      [{:x _     :y max-y :direction 2}] (str "top"    x)
-      :else (neighbour-tl-id crossroads-direction))))
-
-(defn lane-id [crossroads-direction width height]
-  (let [{:keys [x y]} crossroads-direction
-        id (tl-id x y)
-        src-id (lane-src-id crossroads-direction width height)]
-    (str src-id "to" id "_0")))
-
 (defn report-queues [event-service conn width height]
   (doseq [x (crossroads/coord-range width)
           y (crossroads/coord-range height)
           crossroads-direction (crossroads/list-directions x y)]
-    (let [queue (vehicles-count conn (lane-id crossroads-direction width height))
+    (let [queue (vehicles-count conn (network/lane-id crossroads-direction width height))
           queue-event (events/queue-event crossroads-direction :queue queue)]
       (events/trigger-event event-service events/QueueEvent queue-event))))
 
@@ -163,7 +116,7 @@
             phase-time (:phase-time switch-event)
             phase-length (:phase-length switch-event)
             duration (* (- phase-length phase-time) 1000)
-            id (tl-id (:x switch-event) (:y switch-event))]
+            id (network/crossroads-id (:x switch-event) (:y switch-event))]
         (update-tl-state conn id state)
         (update-tl-remaining-duration conn id duration)))))
 
