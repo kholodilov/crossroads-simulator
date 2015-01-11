@@ -41,10 +41,10 @@
   (with-redefs [rand-int (constantly 9)
                 rand-nth (constantly "ns")]
     (is (= 
-      [{:x 1 :y 1 :phase-time 9 :phase-length 20 :direction "ns"}
-       {:x 1 :y 2 :phase-time 9 :phase-length 20 :direction "ns"}
-       {:x 2 :y 1 :phase-time 9 :phase-length 20 :direction "ns"}
-       {:x 2 :y 2 :phase-time 9 :phase-length 20 :direction "ns"}]
+      [{:x 0 :y 0 :phase-time 9 :phase-length 20 :direction "ns"}
+       {:x 0 :y 1 :phase-time 9 :phase-length 20 :direction "ns"}
+       {:x 1 :y 0 :phase-time 9 :phase-length 20 :direction "ns"}
+       {:x 1 :y 1 :phase-time 9 :phase-length 20 :direction "ns"}]
       (initial-switch-events 2 2 20)))
 ))
 

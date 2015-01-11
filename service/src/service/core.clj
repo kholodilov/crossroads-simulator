@@ -24,7 +24,7 @@
         timer-service (run-timer event-service 100)
         sumo-service (sumo/run-sumo event-service simulation-cfg width height sumo-mode 500)
         switchlights-service (switchlights/run-switchlights event-service width height max-phase-length switchlights-params)
-        vehicles-service (gen/run-vehicles-generation event-service)
+        vehicles-service (gen/run-vehicles-generation event-service width height)
         web-service (web/start-web-service event-service {:port 3000})]
 
     (service/build-service

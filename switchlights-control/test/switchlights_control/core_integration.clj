@@ -37,5 +37,5 @@
     (service/stop switchlights-service)
     (service/stop event-service)))
 
-(deftest phase-length-controlled-smoke-test
+(deftest ^:integration phase-length-controlled-smoke-test
   (control/build-phase-length-controlled-fn max-phase-length))

@@ -110,6 +110,14 @@
    {:direction 3 :dx  1 :dy 0} 
    {:direction 4 :dx  0 :dy -1}])
 
+;left0to0/0_0
+;left1to0/1_0
+;bottom0to0/0_0
+;bottom1to1/0_0
+;top0to0/3_0
+;top1to1/3_0
+;right0to4/0_0
+;right1to4/1_0
 (defn lane-id [x y lane]
   (let [id (tl-id x y)
         x* (+ x (:dx lane))
@@ -128,7 +136,7 @@
   (fn [_]
     (.do_timestep conn)
     (report conn width height)
-    (report-queues event-service conn width height)
+    ;(report-queues event-service conn width height)
     (events/trigger-event event-service events/TotalVehiclesCountEvent {:count (vehicles-count conn)})))
 
 (defn switch-lights-fn [conn]

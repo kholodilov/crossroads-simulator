@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <routes>
-  <route id="r1/1_1" edges="0/1to1/1 1/1to2/1 2/1to3/1 3/1to4/1"/>
-  <route id="r3/1_3" edges="4/1to3/1 3/1to2/1 2/1to1/1 1/1to0/1"/>
-  <route id="r1/2_1" edges="0/2to1/2 1/2to2/2 2/2to3/2 3/2to4/2"/>
-  <route id="r3/2_3" edges="4/2to3/2 3/2to2/2 2/2to1/2 1/2to0/2"/>
-  <route id="r1/1_4" edges="1/0to1/1 1/1to1/2 1/2to1/3"/>
-  <route id="r1/2_2" edges="1/3to1/2 1/2to1/1 1/1to1/0"/>
-  <route id="r2/1_4" edges="2/0to2/1 2/1to2/2 2/2to2/3"/>
-  <route id="r2/2_2" edges="2/3to2/2 2/2to2/1 2/1to2/0"/>
-  <route id="r3/1_4" edges="3/0to3/1 3/1to3/2 3/2to3/3"/>
-  <route id="r3/2_2" edges="3/3to3/2 3/2to3/1 3/1to3/0"/>
+  <route id="r0/0_1" edges="left0to0/0 0/0to1/0 1/0to2/0 2/0toright0"/>
+  <route id="r2/0_3" edges="right0to2/0 2/0to1/0 1/0to0/0 0/0toleft0"/>
+  <route id="r0/1_1" edges="left1to0/1 0/1to1/1 1/1to2/1 2/1toright1"/>
+  <route id="r2/1_3" edges="right1to2/1 2/1to1/1 1/1to0/1 0/1toleft1"/>
+  <route id="r0/0_4" edges="bottom0to0/0 0/0to0/1 0/1totop0"/>
+  <route id="r0/1_2" edges="top0to0/1 0/1to0/0 0/0tobottom0"/>
+  <route id="r1/0_4" edges="bottom1to1/0 1/0to1/1 1/1totop1"/>
+  <route id="r1/1_2" edges="top1to1/1 1/1to1/0 1/0tobottom1"/>
+  <route id="r2/0_4" edges="bottom2to2/0 2/0to2/1 2/1totop2"/>
+  <route id="r2/1_2" edges="top2to2/1 2/1to2/0 2/0tobottom2"/>
 </routes>
