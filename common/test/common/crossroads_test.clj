@@ -15,23 +15,26 @@
   (is (= 2 (max-dimension-size [{:x 0 :y 0} {:x 0 :y 1} {:x 1 :y 0} {:x 1 :y 1}] :y)))
 )
 
-(deftest test-queues-directions
-  (is (= [1 2 3 4] queues-directions)))
+(deftest test-list-directions
+  (is (= [(crossroads-direction :x 1 :y 2 :direction 1)
+          (crossroads-direction :x 1 :y 2 :direction 2)
+          (crossroads-direction :x 1 :y 2 :direction 3)
+          (crossroads-direction :x 1 :y 2 :direction 4)] (list-directions 1 2))))
 
 (deftest test-incoming-directions-ns
   (is (=   
-    #{{:x 0 :y 0 :direction 4}
-      {:x 0 :y 1 :direction 2}
-      {:x 1 :y 0 :direction 4}
-      {:x 1 :y 1 :direction 2}
-      {:x 2 :y 0 :direction 4}
-      {:x 2 :y 1 :direction 2}}
+    #{(crossroads-direction :x 0 :y 0 :direction 4)
+      (crossroads-direction :x 0 :y 1 :direction 2)
+      (crossroads-direction :x 1 :y 0 :direction 4)
+      (crossroads-direction :x 1 :y 1 :direction 2)
+      (crossroads-direction :x 2 :y 0 :direction 4)
+      (crossroads-direction :x 2 :y 1 :direction 2)}
     (set (incoming-directions-ns 3 2)))))
 
 (deftest test-incoming-directions-we
   (is (=   
-    #{{:x 0 :y 0 :direction 1}
-      {:x 2 :y 0 :direction 3}
-      {:x 0 :y 1 :direction 1}
-      {:x 2 :y 1 :direction 3}}
+    #{(crossroads-direction :x 0 :y 0 :direction 1)
+      (crossroads-direction :x 2 :y 0 :direction 3)
+      (crossroads-direction :x 0 :y 1 :direction 1)
+      (crossroads-direction :x 2 :y 1 :direction 3)}
     (set (incoming-directions-we 3 2)))))

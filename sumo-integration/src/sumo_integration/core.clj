@@ -111,35 +111,38 @@
    3 {:dx  1 :dy 0}
    4 {:dx  0 :dy -1}})
 
-(defn neighbour-tl-id [x y direction]
+(defn neighbour-tl-id [{:keys [x y direction]}]
   (let [{:keys [dx dy]} (neighbour-tl-shift direction)
         x* (+ x dx)
         y* (+ y dy)]
     (tl-id x* y*)))
 
-(defn lane-src-id [x y direction width height]
+(defn lane-src-id [crossroads-direction width height]
   (let [min-x (crossroads/min-coord)
         min-y (crossroads/min-coord)
         max-x (crossroads/max-coord width)
-        max-y (crossroads/max-coord height)]
-    (match [x y direction]
-      [min-x _ 1] (str "left"   y)
-      [max-x _ 3] (str "right"  y)
-      [_ min-y 4] (str "bottom" x)
-      [_ max-y 2] (str "top"    x)
-      :else (neighbour-tl-id x y direction))))
+        max-y (crossroads/max-coord height)
+        {:keys [x y]} crossroads-direction]
+    (match [crossroads-direction]
+      [{:x min-x :y _     :direction 1}] (str "left"   y)
+      [{:x max-x :y _     :direction 3}] (str "right"  y)
+      [{:x _     :y min-y :direction 4}] (str "bottom" x)
+      [{:x _     :y max-y :direction 2}] (str "top"    x)
+      :else (neighbour-tl-id crossroads-direction))))
 
-(defn lane-id [x y direction width height]
-  (let [id (tl-id x y)
-        src-id (lane-src-id x y direction width height)]
+(defn lane-id [crossroads-direction width height]
+  (let [{:keys [x y]} crossroads-direction
+        id (tl-id x y)
+        src-id (lane-src-id crossroads-direction width height)]
     (str src-id "to" id "_0")))
 
 (defn report-queues [event-service conn width height]
   (doseq [x (crossroads/coord-range width)
           y (crossroads/coord-range height)
-          direction crossroads/queues-directions]
-    (events/trigger-event event-service events/QueueEvent
-      {:x x :y y :direction direction :queue (vehicles-count conn (lane-id x y direction width height))})))
+          crossroads-direction (crossroads/list-directions x y)]
+    (let [queue (vehicles-count conn (lane-id crossroads-direction width height))
+          queue-event (events/queue-event crossroads-direction :queue queue)]
+      (events/trigger-event event-service events/QueueEvent queue-event))))
 
 (defn sumo-step-fn [event-service conn width height]
   (fn [_]

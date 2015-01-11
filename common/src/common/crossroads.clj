@@ -8,19 +8,25 @@
   (+ (apply max (or (seq (map dimension switch-events)) [0])) 1))
 
 (def queues-count 4)
-(def queues-directions (range 1 (+ queues-count 1)))
+(def queues-directions [1 2 3 4])
+
+(defn crossroads-direction [& {:keys [x y direction]}]
+  {:x x :y y :direction direction})
+(defn list-directions [x y]
+  (for [direction queues-directions]
+    (crossroads-direction :x x :y y :direction direction)))
 
 (defn incoming-directions-ns [width height]
   (flatten
     (for [x (coord-range width)]
-      [{:x x :y 0 :direction 4}
-       {:x x :y (max-coord height) :direction 2}])))
+      [(crossroads-direction :x x :y 0 :direction 4)
+       (crossroads-direction :x x :y (max-coord height) :direction 2)])))
 
 (defn incoming-directions-we [width height]
   (flatten
     (for [y (coord-range height)]
-      [{:x 0 :y y :direction 1}
-       {:x (max-coord width) :y y :direction 3}])))
+      [(crossroads-direction :x 0 :y y :direction 1)
+       (crossroads-direction :x (max-coord width) :y y :direction 3)])))
 
 (defn incoming-directions [width height]
   (concat

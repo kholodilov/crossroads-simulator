@@ -1,5 +1,6 @@
 (ns common.events
   (:require [common.service :as service]
+            [common.crossroads :as crossroads]
             [clj-esper.core :as esper]))
 
 (defprotocol EventDriven
@@ -42,3 +43,6 @@
     )
   )
 )
+
+(defn queue-event [crossroads-direction & {:keys [queue]}]
+  (merge crossroads-direction {:queue queue}))
