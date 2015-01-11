@@ -39,3 +39,6 @@
         id (crossroads-id x y)
         src-id (lane-src-id crossroads-direction width height)]
     (str src-id "to" id "_0")))
+
+(defn lane-e2-id [crossroads-direction width height]
+  (str "e2det_" (lane-id crossroads-direction width height)))

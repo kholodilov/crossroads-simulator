@@ -4,7 +4,7 @@
             [common.crossroads :as crossroads]
             [sumo-integration.network :as network])
   (:import [it.polito.appeal.traci SumoTraciConnection]
-           [de.tudresden.sumo.cmd Vehicle Simulation Lane Trafficlights]))
+           [de.tudresden.sumo.cmd Vehicle Simulation Lane Trafficlights ArealDetector]))
 
 (defn simulation-time [conn]
   (.do_job_get conn (Simulation/getCurrentTime)))
@@ -20,6 +20,9 @@
 
 (defn lane-occupancy [conn lane-id]
   (.do_job_get conn (Lane/getLastStepOccupancy lane-id)))
+
+(defn lane-e2-queue-size [conn lane-e2-id]
+  (.do_job_get conn (ArealDetector/getLastStepVehicleNumber lane-e2-id)))
 
 (defrecord TrafficLights [id phase-id phase-duration remaining-duration state]
   Object
@@ -98,7 +101,7 @@
   (doseq [x (crossroads/coord-range width)
           y (crossroads/coord-range height)
           crossroads-direction (crossroads/list-directions x y)]
-    (let [queue (vehicles-count conn (network/lane-id crossroads-direction width height))
+    (let [queue (lane-e2-queue-size conn (network/lane-e2-id crossroads-direction width height))
           queue-event (events/queue-event crossroads-direction :queue queue)]
       (events/trigger-event event-service events/QueueEvent queue-event))))
 
