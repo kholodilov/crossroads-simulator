@@ -8,12 +8,12 @@
 
 (def width 3)
 (def height 2)
-(def step-length 100)
+(def step-length 1000)
 
 (def incoming-vehicle-events (crossroads/incoming-directions width height))
 
-(deftest ^:integration test-sumo-service
-  (let [event-service (events/build-esper-service "test-sumo-service")
+(deftest ^:integration test-vehicles
+  (let [event-service (events/build-esper-service "test-vehicles")
         vehicles-count-events-stmt (events/create-statement event-service "select * from TotalVehiclesCountEvent.std:lastevent()")
         pull-vehicles-count-events (wait-and-pull-events-fn event-service vehicles-count-events-stmt)
         vehicles-count #(get (first (pull-vehicles-count-events)) :count)
@@ -28,6 +28,21 @@
     (wait-a-moment)
     (events/do-timestep event-service 2000)
     (is (= (* (count incoming-vehicle-events) 10) (vehicles-count)))
+
+    (service/stop sumo)
+    (service/stop event-service)))
+
+(deftest ^:integration test-queues
+  (let [event-service (events/build-esper-service "test-queues")
+        queue-events-stmt (events/create-statement event-service "select * from QueueEvent.win:keepall()")
+        pull-queue-events (wait-and-pull-events-fn event-service queue-events-stmt)
+        sumo (sumo/run-sumo event-service "../simulation_grid/config.sumo.cfg" width height :cli step-length)]
+
+    (is (= 0 (count (pull-queue-events))))
+    (events/do-timestep event-service 1000)
+    (is (= 24 (count (pull-queue-events))))
+    (events/do-timestep event-service 2000)
+    (is (= 48 (count (pull-queue-events))))
 
     (service/stop sumo)
     (service/stop event-service)))

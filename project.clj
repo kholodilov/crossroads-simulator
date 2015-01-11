@@ -8,6 +8,7 @@
     :subprocess false
     :versions {
       clojure "1.6.0"
+      org.clojure/core.match "0.2.2"
       ruiyun/tools.timer "1.0.1"
       kholodilov.crossroads-simulator :version
     }

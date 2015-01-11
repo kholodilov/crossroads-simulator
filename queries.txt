@@ -1,3 +1,13 @@
+* Queues on specific crossroad:
+
+select q.x, q.y, q.direction d, q.queue q from pattern[every timer:interval(2 sec)] unidirectional, QueueEvent.std:unique(x, y, direction) as q where q.x =0 and q.y =0
+
+* CSV report for bandwidth calculation:
+
+select cast(cast(current_timestamp / 1000, int), string) || ";" || cast(tv.count, string) || ";" || cast((select count(*) from VehicleEvent.win:time_batch(1 sec, "FORCE_UPDATE, START_EAGER")), string) report from TotalVehiclesCountEvent.std:lastevent() tv output last every 1 second
+
+* Some old stuff:
+
 select e1.x, e1.y, e1.t, e2.x, e2.y, e2.t, e1.direction
 from SwitchEvent.std:unique(x,y) e1, SwitchEvent.std:unique(x,y) e2
 where ((Math.abs(e2.x-e1.x) = 1 and e1.y = e2.y and e1.direction = "we")

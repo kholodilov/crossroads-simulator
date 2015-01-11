@@ -1,7 +1,8 @@
 (ns sumo-integration.core
   (:require [common.events  :as events]
             [common.service :as service]
-            [common.crossroads :as crossroads])
+            [common.crossroads :as crossroads]
+            [clojure.core.match :refer (match)])
   (:import [it.polito.appeal.traci SumoTraciConnection]
            [de.tudresden.sumo.cmd Vehicle Simulation Lane Trafficlights]))
 
@@ -104,39 +105,47 @@
     (.runServer conn)
     conn))
 
-(def lanes
-  [{:direction 1 :dx -1 :dy 0} 
-   {:direction 2 :dx  0 :dy 1} 
-   {:direction 3 :dx  1 :dy 0} 
-   {:direction 4 :dx  0 :dy -1}])
+(def neighbour-tl-shift
+  {1 {:dx -1 :dy 0}
+   2 {:dx  0 :dy 1}
+   3 {:dx  1 :dy 0}
+   4 {:dx  0 :dy -1}})
 
-;left0to0/0_0
-;left1to0/1_0
-;bottom0to0/0_0
-;bottom1to1/0_0
-;top0to0/3_0
-;top1to1/3_0
-;right0to4/0_0
-;right1to4/1_0
-(defn lane-id [x y lane]
+(defn neighbour-tl-id [x y direction]
+  (let [{:keys [dx dy]} (neighbour-tl-shift direction)
+        x* (+ x dx)
+        y* (+ y dy)]
+    (tl-id x* y*)))
+
+(defn lane-src-id [x y direction width height]
+  (let [min-x (crossroads/min-coord)
+        min-y (crossroads/min-coord)
+        max-x (crossroads/max-coord width)
+        max-y (crossroads/max-coord height)]
+    (match [x y direction]
+      [min-x _ 1] (str "left"   y)
+      [max-x _ 3] (str "right"  y)
+      [_ min-y 4] (str "bottom" x)
+      [_ max-y 2] (str "top"    x)
+      :else (neighbour-tl-id x y direction))))
+
+(defn lane-id [x y direction width height]
   (let [id (tl-id x y)
-        x* (+ x (:dx lane))
-        y* (+ y (:dy lane))
-        id* (tl-id x* y*)]
-    (str id* "to" id "_0")))
+        src-id (lane-src-id x y direction width height)]
+    (str src-id "to" id "_0")))
 
 (defn report-queues [event-service conn width height]
   (doseq [x (crossroads/coord-range width)
           y (crossroads/coord-range height)
-          lane lanes]
+          direction crossroads/queues-directions]
     (events/trigger-event event-service events/QueueEvent
-      {:x x :y y :direction (:direction lane) :queue (vehicles-count conn (lane-id x y lane))})))
+      {:x x :y y :direction direction :queue (vehicles-count conn (lane-id x y direction width height))})))
 
 (defn sumo-step-fn [event-service conn width height]
   (fn [_]
     (.do_timestep conn)
     (report conn width height)
-    ;(report-queues event-service conn width height)
+    (report-queues event-service conn width height)
     (events/trigger-event event-service events/TotalVehiclesCountEvent {:count (vehicles-count conn)})))
 
 (defn switch-lights-fn [conn]

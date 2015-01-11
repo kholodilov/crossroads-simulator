@@ -1,6 +1,7 @@
 (ns common.crossroads)
 
 (defn coord-range [dimension-size] (range dimension-size))
+(defn min-coord [] 0)
 (defn max-coord [dimension-size] (- dimension-size 1))
 
 (defn max-dimension-size [switch-events dimension]

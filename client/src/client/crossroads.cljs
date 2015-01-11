@@ -6,7 +6,7 @@
 
 (defn display-switch-crossroads [x y phase-time phase-length direction]
   (ef/at
-    (str ".crossroads .crow:nth-child(" y ") .ccol:nth-child(" x ")")
+    (str ".crossroads .crow:nth-child(" (+ y 1) ") .ccol:nth-child(" (+ x 1) ")")
     (ef/do-> 
       (ef/content (str phase-time "/" phase-length))
       (ef/set-class "ccol" direction))
