@@ -1,6 +1,7 @@
 (ns sumo-integration.core
   (:require [common.events  :as events]
             [common.service :as service]
+            [sumo-integration.network :as network]
             [common.crossroads :as crossroads]
             [clojure.core.match :refer (match)])
   (:import [it.polito.appeal.traci SumoTraciConnection]
@@ -57,9 +58,13 @@
 (def DEPART_POS_BASE -4)
 (def DEPART_LANE_RANDOM -2)
 
-(defn add-vehicle [conn {:keys [x y direction]}]
+(defn route-id [crossroads-direction]
+  (let [{:keys [x y direction]} crossroads-direction]
+    (str "r" x "/" y "_" direction)))
+
+(defn add-vehicle [conn crossroads-direction]
   (let [t (simulation-time conn)
-        route (str "r" x "/" y "_" direction)
+        route (route-id crossroads-direction)
         id (str "v" t "_" route "_" (rand-int 10000000))
         speed 13.8]
     (.do_job_set conn (Vehicle/add id "car" route DEPART_TRIGGERED DEPART_POS_FREE speed DEPART_LANE_RANDOM))))
@@ -165,7 +170,8 @@
 (defn add-vehicle-fn [conn]
   (fn [vehicle-events]
     (doseq [vehicle-event vehicle-events]
-      (add-vehicle conn vehicle-event))))
+      (let [crossroads-direction vehicle-event] ; two things are equivalent now
+        (add-vehicle conn vehicle-event)))))
 
 (defn run-sumo [event-service simulation-cfg width height sumo-mode step-length]
   (let [sumo-conn (start-sumo "/opt/sumo" sumo-mode simulation-cfg step-length)

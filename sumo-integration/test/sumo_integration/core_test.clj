@@ -27,3 +27,7 @@
   (is (= "0/1to1/1_0"  (sumo/lane-id (crossroads-direction :x 1 :y 1 :direction 1) 3 2)))
   (is (= "top1to1/1_0" (sumo/lane-id (crossroads-direction :x 1 :y 1 :direction 2) 3 2)))
   )
+
+(deftest test-route-id
+  (is (= "r1/2_3"  (sumo/route-id (crossroads-direction :x 1 :y 2 :direction 3))))
+  )
