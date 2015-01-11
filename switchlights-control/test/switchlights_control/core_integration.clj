@@ -19,8 +19,8 @@
 
     (doseq [x (crossroads/coord-range 2)
             y (crossroads/coord-range 2)
-            direction crossroads/queues-directions]
-      (events/trigger-event event-service events/QueueEvent {:x x :y y :direction direction :queue 0}))
+            crossroads-direction (crossroads/list-directions x y)]
+      (events/trigger-event event-service events/QueueEvent (events/queue-event crossroads-direction :queue 0)))
 
     (Thread/sleep 3000)
     (println "INFO: starting switchlights-control service test")
