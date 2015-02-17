@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo-sim.org/xsd/netgenerateConfiguration.xsd">
+
+    <!-- http://sumo.dlr.de/wiki/NETGENERATE -->
+    <!-- /opt/sumo/bin/netgenerate -c netgenerate.xml -->
+
+    <grid_network>
+        <grid value="true"/>
+        <grid.length value="{{grid-length}}"/>
+        <grid.x-number value="{{width}}"/>
+        <grid.y-number value="{{height}}"/>
+        <grid.attach-length value="{{attach-length}}"/>
+    </grid_network>
+
+    <output>
+        <output-file value="{{network-dir}}/network.xml"/>
+    </output>
+
+    <processing>
+        <no-turnarounds value="true"/>
+    </processing>
+
+    <building_defaults>
+        <default-junction-type value="traffic_light"/>
+    </building_defaults>
+
+</configuration>
