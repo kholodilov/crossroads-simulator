@@ -1,27 +1,16 @@
 (ns service.core
-  (:require [ruiyun.tools.timer :as timer]
-            [clojure.tools.cli :as cli]
+  (:require [clojure.tools.cli :as cli]
             [common.events      :as events]
             [common.service     :as service]
+            [common.timer       :as timer]
             [service.web        :as web]
             [service.gen        :as gen]
             [switchlights-control.core :as switchlights]
             [sumo-integration.core :as sumo]))
 
-(defn run-timer [event-service period]
-  (let [time (atom 0)
-        timer (timer/timer)
-        timer-fn
-          (fn []
-            (swap! time + period)
-            (events/do-timestep event-service @time))]
-      (timer/run-task! timer-fn :period period :by timer :delay period)
-      (service/build-service :stop-fn #(timer/cancel! timer))
-    ))
-
 (defn run-simulation [simulation-cfg width height max-phase-length switchlights-params sumo-mode]
   (let [event-service (events/build-esper-service "CrossroadsSimulator")
-        timer-service (run-timer event-service 100)
+        timer-service (timer/run-timer event-service 100)
         sumo-service (sumo/run-sumo event-service simulation-cfg width height sumo-mode 500)
         switchlights-service (switchlights/run-switchlights event-service width height max-phase-length switchlights-params)
         vehicles-service (gen/run-vehicles-generation event-service width height)

@@ -7,7 +7,6 @@
                  [javax.servlet/servlet-api "2.5"]
                  [sonian/carica "1.1.0" :exclusions [[cheshire]]]
                  [fogus/ring-edn "0.2.0"]
-                 [ruiyun/tools.timer _]
                  [org.clojure/tools.cli "0.3.1"]
                  [kholodilov.crossroads-simulator/common _]
                  [kholodilov.crossroads-simulator/switchlights-control _]
