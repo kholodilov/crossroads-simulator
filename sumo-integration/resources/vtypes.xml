@@ -9,12 +9,4 @@
     <vType id="van" accel="3.5" decel="5.5" sigma="0.0" length="5.0" minGap="1.5" maxSpeed="60" guiShape="delivery" vClass="private"/>
     <vType id="motorcycle" accel="6.0" decel="5.5" sigma="0.0" length="2.0" minGap="1.5" maxSpeed="220" guiShape="motorcycle" vClass="private"/>
 
-
-<!--     <tlLogic id="0/0" type="static" programID="off" offset="0"></tlLogic>
-    <tlLogic id="0/1" type="static" programID="off" offset="0"></tlLogic>
-    <tlLogic id="1/0" type="static" programID="off" offset="0"></tlLogic>
-    <tlLogic id="1/1" type="static" programID="off" offset="0"></tlLogic>
-    <tlLogic id="2/0" type="static" programID="off" offset="0"></tlLogic>
-    <tlLogic id="2/1" type="static" programID="off" offset="0"></tlLogic>
- -->
 </additional>

@@ -11,6 +11,20 @@
   (doseq [resource resources]
     (write-file (str dir "/" resource) (slurp (io/resource resource)))))
 
+; http://sumo.dlr.de/wiki/Simulation/Output/Lanearea_Detectors_(E2)
+; http://sumo.dlr.de/wiki/TraCI/Lane_Area_Detector_Value_Retrieval
+(defn generate-e2 [sumo-home network-dir e2-length]
+    (sh (str sumo-home "/tools/output/generateTLSE2Detectors.py")
+        "-n" (str network-dir "/network.xml")
+        "-l" (str e2-length)
+        "-f" "1"
+        "-r" "/dev/null"))
+
+(defn generate-tls [network-dir width height]
+  (let [tls (for [x (range width) y (range height)] {:x x :y y})
+        tls-config (clostache/render-resource "tls.xml.template" {:tls tls})]
+    (write-file (str network-dir "/tls.xml") tls-config)))
+
 (defn generate-network [sumo-home output-dir network-name & {:keys [width height grid-length attach-length e2-length] :as params}]
   (let [network-dir (str output-dir "/" network-name)
         netgenerate-file (str network-dir "/netgenerate.xml")
@@ -21,15 +35,10 @@
     (write-file netgenerate-file netgenerate-config)
     (sh (str sumo-home "/bin/netgenerate") "-c" netgenerate-file)
 
-    (copy-resources network-dir "config.sumo.cfg" "additional.xml" "routes.xml" "settings.xml")
+    (copy-resources network-dir "config.sumo.cfg" "vtypes.xml" "routes.xml" "settings.xml")
 
-    ; http://sumo.dlr.de/wiki/Simulation/Output/Lanearea_Detectors_(E2)
-    ; http://sumo.dlr.de/wiki/TraCI/Lane_Area_Detector_Value_Retrieval
-    (sh (str sumo-home "/tools/output/generateTLSE2Detectors.py")
-        "-n" (str network-dir "/network.xml")
-        "-l" (str e2-length)
-        "-f" "1"
-        "-r" "/dev/null")
+    (generate-e2 sumo-home network-dir e2-length)
+    (generate-tls network-dir width height)
 
     (str network-dir "/config.sumo.cfg")
 ))
