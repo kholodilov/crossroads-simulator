@@ -21,7 +21,14 @@
           (crossroads-direction :x 1 :y 2 :direction 3)
           (crossroads-direction :x 1 :y 2 :direction 4)] (list-directions 1 2))))
 
-(deftest test-incoming-directions-ns
+(deftest test-opposite-direction
+  (is (= 3 (opposite-direction 1)))
+  (is (= 4 (opposite-direction 2)))
+  (is (= 1 (opposite-direction 3)))
+  (is (= 2 (opposite-direction 4)))
+  )
+
+(deftest test-incoming-directions-vertical
   (is (=   
     #{(crossroads-direction :x 0 :y 0 :direction 4)
       (crossroads-direction :x 0 :y 1 :direction 2)
@@ -29,12 +36,12 @@
       (crossroads-direction :x 1 :y 1 :direction 2)
       (crossroads-direction :x 2 :y 0 :direction 4)
       (crossroads-direction :x 2 :y 1 :direction 2)}
-    (set (incoming-directions-ns 3 2)))))
+    (set (incoming-directions-vertical 3 2)))))
 
-(deftest test-incoming-directions-we
+(deftest test-incoming-directions-horizontal
   (is (=   
     #{(crossroads-direction :x 0 :y 0 :direction 1)
       (crossroads-direction :x 2 :y 0 :direction 3)
       (crossroads-direction :x 0 :y 1 :direction 1)
       (crossroads-direction :x 2 :y 1 :direction 3)}
-    (set (incoming-directions-we 3 2)))))
+    (set (incoming-directions-horizontal 3 2)))))

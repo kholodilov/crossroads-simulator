@@ -16,20 +16,41 @@
   (for [direction queues-directions]
     (crossroads-direction :x x :y y :direction direction)))
 
+(defn opposite-direction [direction]
+  ({1 3
+    2 4
+    3 1
+    4 2}
+    direction))
+
 (defn incoming-directions-ns [width height]
-  (flatten
-    (for [x (coord-range width)]
-      [(crossroads-direction :x x :y 0 :direction 4)
-       (crossroads-direction :x x :y (max-coord height) :direction 2)])))
+  (for [x (coord-range width)]
+     (crossroads-direction :x x :y (max-coord height) :direction 2)))
+
+(defn incoming-directions-sn [width height]
+  (for [x (coord-range width)]
+     (crossroads-direction :x x :y 0 :direction 4)))
+
+(defn incoming-directions-vertical [width height]
+  (concat
+    (incoming-directions-ns width height)
+    (incoming-directions-sn width height)))
 
 (defn incoming-directions-we [width height]
-  (flatten
-    (for [y (coord-range height)]
-      [(crossroads-direction :x 0 :y y :direction 1)
-       (crossroads-direction :x (max-coord width) :y y :direction 3)])))
+  (for [y (coord-range height)]
+    (crossroads-direction :x 0 :y y :direction 1)))
+
+(defn incoming-directions-ew [width height]
+  (for [y (coord-range height)]
+    (crossroads-direction :x (max-coord width) :y y :direction 3)))
+
+(defn incoming-directions-horizontal [width height]
+  (concat
+    (incoming-directions-we width height)
+    (incoming-directions-ew width height)))
 
 (defn incoming-directions [width height]
   (concat
-    (incoming-directions-ns width height)
-    (incoming-directions-we width height)))
+    (incoming-directions-vertical width height)
+    (incoming-directions-horizontal width height)))
 

@@ -1,7 +1,8 @@
 (ns sumo-integration.generator
   (:require [clojure.java.shell :refer (sh)]
             [clostache.parser :as clostache]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [sumo-integration.network :as network]))
 
 (defn write-file [path content]
   (with-open [w (io/writer path)]
@@ -31,6 +32,10 @@
         tls-config (clostache/render-resource "tls.xml.template" {:tls tls})]
     (write-file (str network-dir "/tls.xml") tls-config)))
 
+(defn generate-routes [network-dir width height]
+  (let [routes-config (clostache/render-resource "routes.xml.template" {:routes (network/routes width height)})]
+    (write-file (str network-dir "/routes.xml") routes-config)))
+
 (defn generate-network [sumo-home output-dir network-name & {:keys [width height grid-length attach-length e2-length] :as params}]
   (let [network-dir (str output-dir "/" network-name)
         netgenerate-file (str network-dir "/netgenerate.xml")
@@ -41,10 +46,11 @@
     (write-file netgenerate-file netgenerate-config)
     (sh* (str sumo-home "/bin/netgenerate") "-c" netgenerate-file)
 
-    (copy-resources network-dir "config.sumo.cfg" "vtypes.xml" "routes.xml" "settings.xml")
+    (copy-resources network-dir "config.sumo.cfg" "vtypes.xml" "settings.xml")
 
     (generate-e2 sumo-home network-dir e2-length)
     (generate-tls network-dir width height)
+    (generate-routes network-dir width height)
 
     (str network-dir "/config.sumo.cfg")
 ))

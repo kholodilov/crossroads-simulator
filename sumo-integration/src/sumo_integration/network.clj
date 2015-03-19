@@ -34,11 +34,39 @@
       [{:x _     :y max-y :direction 2}] (str "top"    x)
       :else (neighbour-crossroads-id crossroads-direction))))
 
-(defn lane-id [crossroads-direction width height]
+
+(defn- edge [crossroads-direction width height]
   (let [{:keys [x y]} crossroads-direction
         id (crossroads-id x y)
         src-id (lane-src-id crossroads-direction width height)]
-    (str src-id "to" id "_0")))
+    {:from src-id :to id}))
+
+(defn edge-id
+  ([edge] (str (:from edge) "to" (:to edge)))
+  ([crossroads-direction width height]
+    (edge-id (edge crossroads-direction width height))))
+
+(defn- opposite-edge [edge]
+  {:from (:to edge) :to (:from edge)})
+
+(defn opposite-edge-id [crossroads-direction width height]
+    (edge-id (opposite-edge (edge crossroads-direction width height))))
+
+(defn lane-id [crossroads-direction width height]
+  (str (edge-id crossroads-direction width height) "_0"))
 
 (defn lane-e2-id [crossroads-direction width height]
   (str "e2det_" (lane-id crossroads-direction width height)))
+
+(defn routes [width height]
+  (for [d (crossroads/incoming-directions-we width height)]
+    {
+      :id (str "r" (:x d) "/" (:y d) "_" (:direction d))
+      :edges
+        (clojure.string/join " "
+          (conj
+            (vec (for [x (crossroads/coord-range width)]
+              (edge-id (crossroads/crossroads-direction :x x :y (:y d) :direction (:direction d)) width height)))
+            (opposite-edge-id 
+                (crossroads/crossroads-direction :x (crossroads/max-coord width) :y (:y d) :direction (crossroads/opposite-direction (:direction d))) width height)))
+    }))

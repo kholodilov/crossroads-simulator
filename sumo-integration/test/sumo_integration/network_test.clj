@@ -26,6 +26,16 @@
   (is (= "1/0"     (#'network/lane-src-id (crossroads-direction :x 1 :y 1 :direction 4) 3 2)))
   )
 
+(deftest test-edge-id
+  (is (= "0/1to1/1"  (network/edge-id (crossroads-direction :x 1 :y 1 :direction 1) 3 2)))
+  (is (= "top1to1/1" (network/edge-id (crossroads-direction :x 1 :y 1 :direction 2) 3 2)))
+  )
+
+(deftest test-opposite-edge-id
+  (is (= "1/1to0/1"  (network/opposite-edge-id (crossroads-direction :x 1 :y 1 :direction 1) 3 2)))
+  (is (= "1/1totop1" (network/opposite-edge-id (crossroads-direction :x 1 :y 1 :direction 2) 3 2)))
+  )
+
 (deftest test-lane-id
   (is (= "0/1to1/1_0"  (network/lane-id (crossroads-direction :x 1 :y 1 :direction 1) 3 2)))
   (is (= "top1to1/1_0" (network/lane-id (crossroads-direction :x 1 :y 1 :direction 2) 3 2)))

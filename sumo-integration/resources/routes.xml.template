@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <routes>
+{{#routes}}
+  <route id="{{id}}" edges="{{edges}}"/>
+{{/routes}}
 <!--   <route id="r0/0_1" edges="left0to0/0 0/0to1/0 1/0to2/0 2/0toright0"/>
   <route id="r2/0_3" edges="right0to2/0 2/0to1/0 1/0to0/0 0/0toleft0"/>
   <route id="r0/1_1" edges="left1to0/1 0/1to1/1 1/1to2/1 2/1toright1"/>
@@ -12,4 +15,7 @@
   <route id="r2/0_4" edges="bottom2to2/0 2/0to2/1 2/1totop2"/>
   <route id="r2/1_2" edges="top2to2/1 2/1to2/0 2/0tobottom2"/>
  -->
+
+  <flow id="f0/0_1" color="1,1,0"  begin="0" end="7200" probability="0.5" type="car" route="r0/0_1" />
+  <flow id="f0/1_1" color="1,1,0"  begin="0" end="7200" probability="1.0" type="car" route="r0/1_1" />
 </routes>
