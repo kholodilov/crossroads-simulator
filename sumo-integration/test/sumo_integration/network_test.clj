@@ -40,3 +40,20 @@
   (is (= "0/1to1/1_0"  (network/lane-id (crossroads-direction :x 1 :y 1 :direction 1) 3 2)))
   (is (= "top1to1/1_0" (network/lane-id (crossroads-direction :x 1 :y 1 :direction 2) 3 2)))
   )
+
+(deftest test-routes
+  (is (= [{:id "r0/0_1" :edges "left0to0/0 0/0to1/0 1/0to2/0 2/0toright0"}
+          {:id "r0/1_1" :edges "left1to0/1 0/1to1/1 1/1to2/1 2/1toright1"}
+
+          {:id "r2/0_3" :edges "right0to2/0 2/0to1/0 1/0to0/0 0/0toleft0"}
+          {:id "r2/1_3" :edges "right1to2/1 2/1to1/1 1/1to0/1 0/1toleft1"}
+
+          {:id "r0/0_4" :edges "bottom0to0/0 0/0to0/1 0/1totop0"}
+          {:id "r1/0_4" :edges "bottom1to1/0 1/0to1/1 1/1totop1"}
+          {:id "r2/0_4" :edges "bottom2to2/0 2/0to2/1 2/1totop2"}
+
+          {:id "r0/1_2" :edges "top0to0/1 0/1to0/0 0/0tobottom0"}
+          {:id "r1/1_2" :edges "top1to1/1 1/1to1/0 1/0tobottom1"}
+          {:id "r2/1_2" :edges "top2to2/1 2/1to2/0 2/0tobottom2"}
+          ]
+    (network/routes 3 2))))

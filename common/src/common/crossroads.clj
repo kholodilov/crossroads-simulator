@@ -17,11 +17,13 @@
     (crossroads-direction :x x :y y :direction direction)))
 
 (defn opposite-direction [direction]
-  ({1 3
-    2 4
-    3 1
-    4 2}
-    direction))
+  (merge direction
+    {:direction
+      ({1 3
+        2 4
+        3 1
+        4 2}
+        (:direction direction))}))
 
 (defn incoming-directions-ns [width height]
   (for [x (coord-range width)]

@@ -58,15 +58,28 @@
 (defn lane-e2-id [crossroads-direction width height]
   (str "e2det_" (lane-id crossroads-direction width height)))
 
-(defn routes [width height]
-  (for [d (crossroads/incoming-directions-we width height)]
-    {
-      :id (str "r" (:x d) "/" (:y d) "_" (:direction d))
-      :edges
-        (clojure.string/join " "
-          (conj
-            (vec (for [x (crossroads/coord-range width)]
-              (edge-id (crossroads/crossroads-direction :x x :y (:y d) :direction (:direction d)) width height)))
-            (opposite-edge-id 
-                (crossroads/crossroads-direction :x (crossroads/max-coord width) :y (:y d) :direction (crossroads/opposite-direction (:direction d))) width height)))
-    }))
+(defn routes
+  ([width height incoming-directions-gen steps-gen]
+    (for [d (incoming-directions-gen width height)]
+      {
+        :id (route-id d)
+        :edges
+          (let [steps (steps-gen d)
+                last-step (last steps)]
+            (clojure.string/join " "
+              (conj
+                (vec (for [step steps] (edge-id step width height)))
+                (opposite-edge-id (crossroads/opposite-direction last-step) width height)
+              )))
+      }))
+  ([width height]
+    (concat
+      (routes width height crossroads/incoming-directions-we
+        (fn [d] (for [x (crossroads/coord-range width)] {:x x :y (:y d) :direction (:direction d)})))
+      (routes width height crossroads/incoming-directions-ew
+        (fn [d] (for [x (reverse (crossroads/coord-range width))] {:x x :y (:y d) :direction (:direction d)})))
+      (routes width height crossroads/incoming-directions-sn
+        (fn [d] (for [y (crossroads/coord-range height)] {:x (:x d) :y y :direction (:direction d)})))
+      (routes width height crossroads/incoming-directions-ns
+        (fn [d] (for [y (reverse (crossroads/coord-range height))] {:x (:x d) :y y :direction (:direction d)})))
+    )))

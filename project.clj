@@ -4,6 +4,17 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :plugins [[lein-modules "0.3.6"]]
+  :profiles {
+    :test {
+      :dependencies [[pjstadig/humane-test-output "0.7.0"]]
+      :injections   [(require 'pjstadig.humane-test-output)
+                     (pjstadig.humane-test-output/activate!)]
+      :test-selectors ^:replace {
+        :default (fn [m] (not (:integration m)))
+        :itest (fn [m] true)
+      }
+    }
+  }
   :modules {
     :subprocess false
     :versions {
@@ -11,12 +22,6 @@
       org.clojure/core.match "0.2.2"
       ruiyun/tools.timer "1.0.1"
       kholodilov.crossroads-simulator :version
-    }
-    :inherited {
-      :test-selectors ^:replace {
-        :default (fn [m] (not (:integration m)))
-        :itest (fn [m] true)
-      }
     }
   }
 )
