@@ -20,37 +20,37 @@
 
 ; http://sumo.dlr.de/wiki/Simulation/Output/Lanearea_Detectors_(E2)
 ; http://sumo.dlr.de/wiki/TraCI/Lane_Area_Detector_Value_Retrieval
-(defn generate-e2 [sumo-home network-dir e2-length]
+(defn generate-e2 [sumo-home network-file e2-length]
   (sh* (str sumo-home "/tools/output/generateTLSE2Detectors.py")
-        "-n" (str network-dir "/network.xml")
+        "-n" network-file
         "-l" (str e2-length)
         "-f" "1"
         "-r" "/dev/null"))
 
-(defn generate-tls [network-dir width height]
-  (let [tls (for [x (range width) y (range height)] {:x x :y y})
-        tls-config (clostache/render-resource "tls.xml.template" {:tls tls})]
-    (write-file (str network-dir "/tls.xml") tls-config)))
-
-(defn generate-routes [network-dir width height]
-  (let [routes-config (clostache/render-resource "routes.xml.template" {:routes (network/routes width height)})]
-    (write-file (str network-dir "/routes.xml") routes-config)))
+(defn generate-config [template dest params]
+  (write-file dest (clostache/render-resource template params)))
 
 (defn generate-network [sumo-home output-dir network-name & {:keys [width height grid-length attach-length e2-length] :as params}]
   (let [network-dir (str output-dir "/" network-name)
-        netgenerate-file (str network-dir "/netgenerate.xml")
+        config-file #(str network-dir "/" %)
+        netgenerate-file (config-file "netgenerate.xml")
+        network-file (config-file "network.xml")
+        tls-file (config-file "tls.xml")
+        routes-file (config-file "routes.xml")
+        
         netgenerate-params (merge params {:network-dir network-dir})
-        netgenerate-config (clostache/render-resource "netgenerate.xml.template" netgenerate-params)]
+        tls-params {:tls (for [x (range width) y (range height)] {:x x :y y})}
+        routes-params {:routes (network/routes width height)}]
 
     (sh* "mkdir" "-p" network-dir)
-    (write-file netgenerate-file netgenerate-config)
+    (generate-config "netgenerate.xml.template" netgenerate-file netgenerate-params)
     (sh* (str sumo-home "/bin/netgenerate") "-c" netgenerate-file)
+
+    (generate-e2 sumo-home network-file e2-length)
+    (generate-config "tls.xml.template" tls-file tls-params)
+    (generate-config "routes.xml.template" routes-file routes-params)
 
     (copy-resources network-dir "config.sumo.cfg" "vtypes.xml" "settings.xml")
 
-    (generate-e2 sumo-home network-dir e2-length)
-    (generate-tls network-dir width height)
-    (generate-routes network-dir width height)
-
-    (str network-dir "/config.sumo.cfg")
+    (config-file "config.sumo.cfg")
 ))

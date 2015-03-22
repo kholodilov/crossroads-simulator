@@ -21,7 +21,7 @@
 
 (def cli-options
   [["-w" "--width n" "Width"
-    :default 3
+    :default 2
     :parse-fn #(Integer/parseInt %)]
    ["-h" "--height n" "Height"
     :default 2
