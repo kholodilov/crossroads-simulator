@@ -9,7 +9,7 @@
 
 (deftest ^:integration test-generator
     (let [simulation-cfg (sumo-generator/generate-network "/opt/sumo" "/tmp" "Experiments"
-                          :width width :height height :grid-length 300 :attach-length 600 :e2-length 120)
+                          :width width :height height :grid-length 300 :attach-length 300 :e2-length 120)
           sumo-conn (sumo/start-sumo "/opt/sumo" :cli simulation-cfg step-length)]
       (.do_timestep sumo-conn)
       (.close sumo-conn)))

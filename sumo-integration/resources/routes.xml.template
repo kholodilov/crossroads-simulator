@@ -5,6 +5,7 @@
   <route id="{{id}}" edges="{{edges}}"/>
 {{/routes}}
 
-  <flow id="f0/0_1" color="1,1,0"  begin="0" end="7200" probability="0.5" type="car" route="r0/0_1" />
-  <flow id="f0/1_1" color="1,1,0"  begin="0" end="7200" probability="1.0" type="car" route="r0/1_1" />
+{{#vehicles}}
+  <vehicle id="{{id}}" type="car" route="{{route-id}}" depart="0" color="1,1,0" departPos="{{depart-pos}}"/>
+{{/vehicles}}
 </routes>

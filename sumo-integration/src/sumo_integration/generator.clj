@@ -30,7 +30,18 @@
 (defn generate-config [template dest params]
   (write-file dest (clostache/render-resource template params)))
 
-(defn generate-network [sumo-home output-dir network-name & {:keys [width height grid-length attach-length e2-length] :as params}]
+(def car-interval 6)
+
+(defn generate-vehicles 
+  ([route-id count grid-length car-interval]
+    (for [i (range count)]
+      {:id (str route-id "_" i)
+       :route-id route-id
+       :depart-pos (- grid-length (* car-interval (+ i 2)))}))
+  ([vehicles-defs grid-length car-interval]
+    (flatten (map #(generate-vehicles (:route-id %) (:count %) grid-length car-interval) vehicles-defs))))
+
+(defn generate-network [sumo-home output-dir network-name & {:keys [width height grid-length attach-length e2-length routes vehicles-defs] :as params}]
   (let [network-dir (str output-dir "/" network-name)
         config-file #(str network-dir "/" %)
         netgenerate-file (config-file "netgenerate.xml")
@@ -40,11 +51,12 @@
         
         netgenerate-params (merge params {:network-dir network-dir})
         tls-params {:tls (for [x (range width) y (range height)] {:x x :y y})}
-        routes-params {:routes (network/routes width height)}]
+        routes-params {:routes (if (nil? routes) (network/routes width height) routes)
+                       :vehicles (generate-vehicles vehicles-defs grid-length car-interval)}]
 
     (sh* "mkdir" "-p" network-dir)
     (generate-config "netgenerate.xml.template" netgenerate-file netgenerate-params)
-    (sh* (str sumo-home "/bin/netgenerate") "-c" netgenerate-file)
+    (sh* (str sumo-home "/bin/netgenerate") "-c" netgenerate-file :env {}) ; :env {} - shit hack to w/a matlab library path
 
     (generate-e2 sumo-home network-file e2-length)
     (generate-config "tls.xml.template" tls-file tls-params)

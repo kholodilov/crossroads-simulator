@@ -10,7 +10,15 @@
   (let [event-service (events/build-esper-service "Experiments")
         timer-service (timer/run-timer event-service 100)
         simulation-cfg (sumo-generator/generate-network "/opt/sumo" "/tmp" "Experiments"
-                        :width width :height height :grid-length 300 :attach-length 600 :e2-length 120)
+                        :width width :height height :grid-length 300 :attach-length 300 :e2-length 120
+                        :routes [{:id "r0/0_1" :edges "left0to0/0 0/0to1/0"}
+                                 {:id "r0/0_2" :edges "0/1to0/0 0/0tobottom0"}
+                                 {:id "r0/0_3" :edges "1/0to0/0 0/0toleft0"}
+                                 {:id "r0/0_4" :edges "bottom0to0/0 0/0to0/1"}]
+                        :vehicles-defs [{:route-id "r0/0_1" :count 5}
+                                        {:route-id "r0/0_2" :count 5}
+                                        {:route-id "r0/0_3" :count 5}
+                                        {:route-id "r0/0_4" :count 5}])
         sumo-service (sumo/run-sumo event-service simulation-cfg width height sumo-mode 500)]
 
     (service/build-service
