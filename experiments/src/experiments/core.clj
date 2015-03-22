@@ -18,7 +18,11 @@
                         :vehicles-defs [{:route-id "r0/0_1" :count 5}
                                         {:route-id "r0/0_2" :count 5}
                                         {:route-id "r0/0_3" :count 5}
-                                        {:route-id "r0/0_4" :count 5}])
+                                        {:route-id "r0/0_4" :count 5}]
+                        :tls [{:id "0/0" :program-id "1" :phases [{:duration 7 :state "rrrGGgrrrGGg"} {:duration 14 :state "GGgrrrGGgrrr"}]}
+                              {:id "0/1" :program-id "off"}
+                              {:id "1/0" :program-id "off"}
+                              {:id "1/1" :program-id "off"}])
         sumo-service (sumo/run-sumo event-service simulation-cfg width height sumo-mode 500)]
 
     (service/build-service

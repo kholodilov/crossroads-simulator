@@ -31,6 +31,7 @@
   (write-file dest (clostache/render-resource template params)))
 
 (def car-interval 6)
+(defn tls-off [width height] (for [x (range width) y (range height)] {:id (str x "/" y) :program-id "off"}))
 
 (defn generate-vehicles 
   ([route-id count grid-length car-interval]
@@ -41,7 +42,7 @@
   ([vehicles-defs grid-length car-interval]
     (flatten (map #(generate-vehicles (:route-id %) (:count %) grid-length car-interval) vehicles-defs))))
 
-(defn generate-network [sumo-home output-dir network-name & {:keys [width height grid-length attach-length e2-length routes vehicles-defs] :as params}]
+(defn generate-network [sumo-home output-dir network-name & {:keys [width height grid-length attach-length e2-length routes vehicles-defs tls] :as params}]
   (let [network-dir (str output-dir "/" network-name)
         config-file #(str network-dir "/" %)
         netgenerate-file (config-file "netgenerate.xml")
@@ -50,7 +51,7 @@
         routes-file (config-file "routes.xml")
         
         netgenerate-params (merge params {:network-dir network-dir})
-        tls-params {:tls (for [x (range width) y (range height)] {:x x :y y})}
+        tls-params {:tls (if (nil? tls) (tls-off width height) tls)}
         routes-params {:routes (if (nil? routes) (network/routes width height) routes)
                        :vehicles (generate-vehicles vehicles-defs grid-length car-interval)}]
 
