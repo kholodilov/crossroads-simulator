@@ -9,7 +9,10 @@
         timer-fn
           (fn []
             (swap! time + period)
-            (events/do-timestep event-service @time))]
+            (events/do-timestep event-service (deref time)))]
       (timer/run-task! timer-fn :period period :by timer :delay period)
-      (service/build-service :stop-fn #(timer/cancel! timer))
+      (service/build-service :conn {:get-time #(deref time)} :stop-fn #(timer/cancel! timer))
     ))
+
+(defn get-time [timer-service]
+  ((:get-time (:conn timer-service))))

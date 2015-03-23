@@ -10,7 +10,7 @@
   (let [event-service (events/build-esper-service "Experiments")
         timer-service (timer/run-timer event-service 100)
         simulation-cfg (sumo-generator/generate-network "/opt/sumo" "/tmp" "Experiments"
-                        :width width :height height :grid-length 300 :attach-length 300 :e2-length 120
+                        :width width :height height :grid-length 300 :attach-length 296 :e2-length 120
                         :routes [{:id "r0/0_1" :edges "left0to0/0 0/0to1/0"}
                                  {:id "r0/0_2" :edges "0/1to0/0 0/0tobottom0"}
                                  {:id "r0/0_3" :edges "1/0to0/0 0/0toleft0"}
@@ -19,17 +19,26 @@
                                         {:route-id "r0/0_2" :count 5}
                                         {:route-id "r0/0_3" :count 5}
                                         {:route-id "r0/0_4" :count 5}]
-                        :tls [{:id "0/0" :program-id "1" :phases [{:duration 7 :state "rrrGGgrrrGGg"} {:duration 14 :state "GGgrrrGGgrrr"}]}
+                        :tls [{:id "0/0" :program-id "1" :phases [{:duration 5 :state "rrrGGgrrrGGg"} {:duration 10 :state "GGgrrrGGgrrr"}]}
                               {:id "0/1" :program-id "off"}
                               {:id "1/0" :program-id "off"}
                               {:id "1/1" :program-id "off"}])
-        sumo-service (sumo/run-sumo event-service simulation-cfg width height sumo-mode 500)]
+        sumo-service (sumo/run-sumo event-service simulation-cfg width height sumo-mode 500)
 
-    (service/build-service
-      :stop-fn #(do
-        (service/stop sumo-service)
-        (service/stop timer-service)
-        (service/stop event-service)))))
+        queues-statement (events/create-statement event-service "select sum(q.queue) q, current_timestamp t from QueueEvent.std:unique(x, y, direction) as q where q.x = 0 and q.y = 0")
+        stop-fn #(do
+                  (service/stop sumo-service)
+                  (service/stop timer-service)
+                  (service/stop event-service))]
+
+    (events/subscribe event-service queues-statement
+      (fn [[event & _]]
+        (println event)
+        (if (= 0 (:q event))
+          (do
+            (println (str "STOP - time " (:t event)))
+            (stop-fn)))))
+  ))
 
 (def cli-options
   [["-w" "--width n" "Width"
