@@ -1,5 +1,6 @@
 (ns experiments.core
   (:require [clojure.tools.cli :as cli]
+            [clojure.java.io :as io]
             [common.events      :as events]
             [common.service     :as service]
             [common.timer       :as timer]
@@ -43,7 +44,7 @@
             (println (str "STOP - time " (:t event)))
             (deliver T (:t event))))))
 
-    (let [Tmillis (deref T 1000000 -1)
+    (let [Tmillis (deref T 180000 -1)
           Tseconds (quot Tmillis 1000)]
       (stop-fn)
       Tseconds)
@@ -65,13 +66,15 @@
         phs (repeatedly 2 #(+ 3 (rand-int (- max-phase 2))))
         params (vec (flatten [qs phs]))]
     (println (str "Params: " params))
-    (let [T (apply run-simulation params)
-          result (clojure.string/join "," (conj params T))]
-      (println (str "### " result)))))
+    (let [T (apply run-simulation params)]
+      (clojure.string/join "," (conj params T)))))
 
 (defn -main [& args]
   (let [{:keys [max-q max-phase iterations]}
           (:options (cli/parse-opts args cli-options))]
-    (doseq [i (range iterations)]
-      (println (str "Iteration " i))
-      (iteration max-q max-phase))))
+    (with-open [w (io/writer (str "result" (System/currentTimeMillis) ".csv"))]
+      (doseq [i (range iterations)]
+        (println (str "Iteration " i))
+        (.write w (iteration max-q max-phase))
+        (.write w "\n")
+        (.flush w)))))
