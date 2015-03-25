@@ -1,13 +1,15 @@
 (ns experiments.core
   (:require [clojure.tools.cli :as cli]
             [clojure.java.io :as io]
+            [clj-time.local :as time-local]
+            [clj-time.format :as time-format]
             [common.events      :as events]
             [common.service     :as service]
             [common.timer       :as timer]
             [sumo-integration.core :as sumo]
             [sumo-integration.generator :as sumo-generator]))
 
-(defn run-simulation [q1 q2 q3 q4 ph1 ph2]
+(defn run-simulation [q1 q2 q3 q4 ph1 ph2 speed sumo-mode]
   (let [T (promise)
         width 2
         height 2
@@ -26,8 +28,8 @@
                               {:id "0/1" :program-id "off"}
                               {:id "1/0" :program-id "off"}
                               {:id "1/1" :program-id "off"}])
-        sumo-service (sumo/run-sumo event-service simulation-cfg width height :cli 500)
-        timer-service (timer/run-timer event-service 100)
+        sumo-service (sumo/run-sumo event-service simulation-cfg width height sumo-mode 1000)
+        timer-service (timer/run-timer event-service 1000 speed)
 
         queues-statement (events/create-statement event-service "select sum(q.queue) q, current_timestamp t from QueueEvent.std:unique(x, y, direction) as q where q.x = 0 and q.y = 0")
 
@@ -59,22 +61,30 @@
     :parse-fn #(Integer/parseInt %)]
    ["-p" "--max-phase n" "Maximum phase length"
     :default 30
-    :parse-fn #(Integer/parseInt %)]])
+    :parse-fn #(Integer/parseInt %)]
+   ["-o" "--output file" "Output file name"
+    :default (str "result-" (time-format/unparse (time-format/formatter "yyyy-MM-dd-HH-mm-ss") (time-local/local-now)) ".csv")]
+   ["-s" "--speed n" "Speed-up coefficient (10 -> 10x speed-up)"
+    :default 1
+    :parse-fn #(Integer/parseInt %)]
+   ["-m" "--sumo-mode mode" "Simulation mode - 'cli' or 'gui'"
+    :default :cli
+    :parse-fn #(keyword %)]])
 
-(defn iteration [max-q max-phase]
+(defn iteration [max-q max-phase speed sumo-mode]
   (let [qs (repeatedly 4 #(rand-int max-q))
         phs (repeatedly 2 #(+ 3 (rand-int (- max-phase 2))))
         params (vec (flatten [qs phs]))]
     (println (str "Params: " params))
-    (let [T (apply run-simulation params)]
+    (let [T (apply run-simulation (concat params [speed sumo-mode]))]
       (clojure.string/join "," (conj params T)))))
 
 (defn -main [& args]
-  (let [{:keys [max-q max-phase iterations]}
+  (let [{:keys [max-q max-phase iterations output speed sumo-mode]}
           (:options (cli/parse-opts args cli-options))]
-    (with-open [w (io/writer (str "result" (System/currentTimeMillis) ".csv"))]
+    (with-open [w (io/writer output)]
       (doseq [i (range iterations)]
         (println (str "Iteration " i))
-        (.write w (iteration max-q max-phase))
+        (.write w (iteration max-q max-phase speed sumo-mode))
         (.write w "\n")
         (.flush w)))))
