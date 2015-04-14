@@ -40,13 +40,13 @@
 
     (events/subscribe event-service queues-statement
       (fn [[event & _]]
-        (println event)
-        (if (= 0 (:q event))
+        ;(println event)
+        (if (and (= 0 (:q event)) (>= (:t event) 7000))
           (do
-            (println (str "STOP - time " (:t event)))
+            ;(println (str "STOP - time " (:t event)))
             (deliver T (:t event))))))
 
-    (let [Tmillis (deref T 180000 -1)
+    (let [Tmillis (deref T 10000 -1000)
           Tseconds (quot Tmillis 1000)]
       (stop-fn)
       Tseconds)
@@ -73,7 +73,7 @@
 
 (defn iteration [max-q max-phase speed sumo-mode]
   (let [qs (repeatedly 4 #(rand-int max-q))
-        phs (repeatedly 2 #(+ 3 (rand-int (- max-phase 2))))
+        phs (repeatedly 2 #(+ 1 (rand-int max-phase)))
         params (vec (flatten [qs phs]))]
     (println (str "Params: " params))
     (let [T (apply run-simulation (concat params [speed sumo-mode]))]

@@ -108,7 +108,7 @@
 (defn sumo-step-fn [event-service conn width height]
   (fn [_]
     (.do_timestep conn)
-    (report conn width height)
+    ;(report conn width height)
     (report-queues event-service conn width height)
     (events/trigger-event event-service events/TotalVehiclesCountEvent {:count (vehicles-count conn)})))
 
