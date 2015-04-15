@@ -2,8 +2,6 @@
   (:require [experiments.core]
             [clojure.tools.cli :as cli]
             [clojure.java.io :as io]
-            [clj-time.local :as time-local]
-            [clj-time.format :as time-format]
             [common.events      :as events]
             [common.service     :as service]
             [common.timer       :as timer]

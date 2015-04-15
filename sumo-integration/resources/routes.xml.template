@@ -8,4 +8,8 @@
 {{#vehicles}}
   <vehicle id="{{id}}" type="car" route="{{route-id}}" depart="0" color="1,1,0" departPos="{{depart-pos}}"/>
 {{/vehicles}}
+
+{{#flows}}
+  <flow id="{{id}}" type="car" route="{{route-id}}" begin="0" color="1,1,0" vehsPerHour="{{vehsPerHour}}" />
+{{/flows}}
 </routes>

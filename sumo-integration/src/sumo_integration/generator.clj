@@ -33,6 +33,9 @@
 (def car-interval 6)
 (defn tls-off [width height] (for [x (range width) y (range height)] {:id (str x "/" y) :program-id "off"}))
 
+(defn generate-flows [flow-defs]
+  (map #(merge % {:vehsPerHour (* (:throughput %) 3600) :id (str (:route-id %) "_flow")}) flow-defs))
+
 (defn generate-vehicles 
   ([route-id count grid-length car-interval]
     (for [i (range count)]
@@ -42,7 +45,7 @@
   ([vehicles-defs grid-length car-interval]
     (flatten (map #(generate-vehicles (:route-id %) (:count %) grid-length car-interval) vehicles-defs))))
 
-(defn generate-network [sumo-home output-dir network-name & {:keys [width height grid-length attach-length e2-length routes vehicles-defs tls] :as params}]
+(defn generate-network [sumo-home output-dir network-name & {:keys [width height grid-length attach-length e2-length routes vehicles-defs flow-defs tls] :as params}]
   (let [network-dir (str output-dir "/" network-name)
         config-file #(str network-dir "/" %)
         netgenerate-file (config-file "netgenerate.xml")
@@ -51,9 +54,10 @@
         routes-file (config-file "routes.xml")
         
         netgenerate-params (merge params {:network-dir network-dir})
-        tls-params {:tls (if (nil? tls) (tls-off width height) tls)}
-        routes-params {:routes (if (nil? routes) (network/routes width height) routes)
-                       :vehicles (generate-vehicles vehicles-defs grid-length car-interval)}]
+        tls-params {:tls (if tls tls (tls-off width height))}
+        routes-params {:routes (if routes routes (network/routes width height))
+                       :vehicles (generate-vehicles vehicles-defs grid-length car-interval)
+                       :flows (if flow-defs (generate-flows flow-defs))}]
 
     (sh* "mkdir" "-p" network-dir)
     (generate-config "netgenerate.xml.template" netgenerate-file netgenerate-params)

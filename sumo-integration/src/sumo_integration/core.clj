@@ -9,6 +9,9 @@
 (defn simulation-time [conn]
   (.do_job_get conn (Simulation/getCurrentTime)))
 
+(defn departed-vehicles-count [conn]
+  (.do_job_get conn (Simulation/getDepartedNumber)))
+
 (defn vehicles [conn]
   (seq (.do_job_get conn (Vehicle/getIDList))))
 
