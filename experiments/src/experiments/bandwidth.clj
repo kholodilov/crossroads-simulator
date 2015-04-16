@@ -31,18 +31,28 @@
         sumo-service (sumo/run-sumo event-service simulation-cfg width height sumo-mode 1000)
         timer-service (timer/run-timer event-service 1000 speed)
 
-        bandwidth-statement (events/create-statement event-service "select avg(count) bw from DepartedVehiclesCountEvent.win:time(30 sec)")
+        bw-low-limit (* 1.8 (+ t_v t_h))
 
         stop-fn #(do
                   (service/stop timer-service)
                   (service/stop sumo-service)
                   (service/stop event-service))]
 
-    (events/subscribe event-service bandwidth-statement
+    (println (str "bw-low-limit: " bw-low-limit))
+
+    (events/create-statement event-service "create schema Bandwidth(bw double)")
+
+    (events/subscribe event-service (events/create-statement event-service "insert into Bandwidth select avg(count) bw from DepartedVehiclesCountEvent.win:time(30 sec)")
       (fn [[event & _]]
         (println event)
       ))
-
+    (events/subscribe event-service
+      (events/create-statement event-service
+        (str "select * from Bandwidth match_recognize (measures first(A.bw) as first_bw pattern (A{5}) define A as A.bw < " bw-low-limit ")"))
+      (fn [[event & _]]
+        (println "Saturation!")
+        (println event)
+      ))
   ))
 
 (def cli-options
