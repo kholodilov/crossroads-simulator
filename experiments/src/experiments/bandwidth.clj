@@ -31,10 +31,17 @@
         sumo-service (sumo/run-sumo event-service simulation-cfg width height sumo-mode 1000)
         timer-service (timer/run-timer event-service 1000 speed)
 
+        bandwidth-statement (events/create-statement event-service "select avg(count) bw from DepartedVehiclesCountEvent.win:time(30 sec)")
+
         stop-fn #(do
                   (service/stop timer-service)
                   (service/stop sumo-service)
                   (service/stop event-service))]
+
+    (events/subscribe event-service bandwidth-statement
+      (fn [[event & _]]
+        (println event)
+      ))
 
   ))
 
@@ -51,5 +58,5 @@
 (defn -main [& args]
   (let [{:keys [output speed sumo-mode]}
           (:options (cli/parse-opts args cli-options))]
-    (run-simulation 0.5 0.25 20 speed sumo-mode)
+    (run-simulation 0.5 0.25 30 speed sumo-mode)
   ))

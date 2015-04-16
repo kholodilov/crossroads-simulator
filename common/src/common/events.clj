@@ -16,9 +16,10 @@
 (esper/defevent QueueEvent   [x :int y :int direction :int queue :int])
 (esper/defevent VehicleEvent [x :int y :int direction :int])
 (esper/defevent TotalVehiclesCountEvent [count :int])
+(esper/defevent DepartedVehiclesCountEvent [count :int])
 
 (defn build-esper-service [name]
-  (let [esper-conf (esper/create-configuration (esper/xml-configuration) [SwitchEvent QueueEvent VehicleEvent TotalVehiclesCountEvent])
+  (let [esper-conf (esper/create-configuration (esper/xml-configuration) [SwitchEvent QueueEvent VehicleEvent TotalVehiclesCountEvent DepartedVehiclesCountEvent])
         esper-service (esper/create-service name esper-conf)]
     (esper/send-current-time-event esper-service 0)
     (reify

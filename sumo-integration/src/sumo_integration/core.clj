@@ -113,7 +113,8 @@
     (.do_timestep conn)
     ;(report conn width height)
     (report-queues event-service conn width height)
-    (events/trigger-event event-service events/TotalVehiclesCountEvent {:count (vehicles-count conn)})))
+    (events/trigger-event event-service events/TotalVehiclesCountEvent {:count (vehicles-count conn)})
+    (events/trigger-event event-service events/DepartedVehiclesCountEvent {:count (departed-vehicles-count conn)})))
 
 (defn switch-lights-fn [conn]
   (fn [switch-events]
