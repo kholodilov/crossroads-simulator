@@ -7,7 +7,7 @@
 
 (def calcModelArgs
   (object-array [
-    "../../model.RLSM.error.0.12.date.2013-10-08.mat"
+    "../../model.RLSM.error.0.02.2015-04-07.mat"
     ""
     "RLSM"]))
 (def calcModelResult (vec (.calculateCrossroadModel cc 4 calcModelArgs)))
@@ -15,7 +15,7 @@
 (let [[mw_mfParams mw_mfCounts mw_fRules mw_modelParams] calcModelResult
       getPhaseLengthArgs
         (object-array [
-          (double-array [72 9 26 4])
+          (double-array [40 0 28 3])
           20.0
           (double-array [1 0 1 0])
           mw_mfParams

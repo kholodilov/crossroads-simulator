@@ -10,8 +10,11 @@
 
 (def experiment-name (experiments.core/experiment-name "bandwidth"))
 
-(defn run-simulation [t_h t_v ph speed sumo-mode]
-  (let [width 2
+(defn run-simulation [t_h t_v ph saturation-timeout speed sumo-mode]
+  (let [saturation-time (promise)
+        saturation-timeout* (quot (* saturation-timeout 1000) speed)
+
+        width 2
         height 2
         event-service (events/build-esper-service experiment-name)
         simulation-cfg (sumo-generator/generate-network "/opt/sumo" "/tmp" experiment-name
@@ -32,6 +35,7 @@
         timer-service (timer/run-timer event-service 1000 speed)
 
         bw-low-limit (* 1.8 (+ t_v t_h))
+        bw-window-sec 30
 
         stop-fn #(do
                   (service/stop timer-service)
@@ -40,24 +44,32 @@
 
     (println (str "bw-low-limit: " bw-low-limit))
 
-    (events/create-statement event-service "create schema Bandwidth(bw double)")
+    (events/create-statement event-service "create schema Bandwidth(bw double, t double)")
 
-    (events/subscribe event-service (events/create-statement event-service "insert into Bandwidth select avg(count) bw from DepartedVehiclesCountEvent.win:time(30 sec)")
+    (events/subscribe event-service (events/create-statement event-service (str "insert into Bandwidth select avg(count) bw, current_timestamp / 1000 as t from DepartedVehiclesCountEvent.win:time(" bw-window-sec "sec)"))
       (fn [[event & _]]
         (println event)
       ))
+
     (events/subscribe event-service
       (events/create-statement event-service
-        (str "select * from Bandwidth match_recognize (measures first(A.bw) as first_bw pattern (A{5}) define A as A.bw < " bw-low-limit ")"))
+        (str "select * from Bandwidth match_recognize (measures current_timestamp / 1000 as t pattern (A{10}) define A as (A.bw < " bw-low-limit " and current_timestamp / 1000 > " (* bw-window-sec 2) "))"))
       (fn [[event & _]]
-        (println "Saturation!")
-        (println event)
+        (println (str "Saturation! " event))
+        (deliver saturation-time (:t event))
       ))
+
+    (let [result (deref saturation-time saturation-timeout* nil)]
+      (stop-fn)
+      result)
   ))
 
 (def cli-options
   [["-o" "--output file" "Output file name"
     :default (str experiment-name ".csv")]
+   ["-t" "--saturation-timeout t" "Time in seconds, after which we can state that network is not saturated"
+    :default 700
+    :parse-fn #(Integer/parseInt %)]
    ["-s" "--speed n" "Speed-up coefficient (10 -> 10x speed-up)"
     :default 1
     :parse-fn #(Integer/parseInt %)]
@@ -66,7 +78,7 @@
     :parse-fn #(keyword %)]])
 
 (defn -main [& args]
-  (let [{:keys [output speed sumo-mode]}
+  (let [{:keys [output speed saturation-timeout sumo-mode]}
           (:options (cli/parse-opts args cli-options))]
-    (run-simulation 0.5 0.25 30 speed sumo-mode)
+    (println (run-simulation 0.25 0.125 30 saturation-timeout speed sumo-mode))
   ))
