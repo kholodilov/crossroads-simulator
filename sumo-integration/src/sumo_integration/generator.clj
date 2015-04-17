@@ -34,7 +34,7 @@
 (defn tls-off [width height] (for [x (range width) y (range height)] {:id (str x "/" y) :program-id "off"}))
 
 (defn generate-flows [flow-defs]
-  (map #(merge % {:vehsPerHour (* (:throughput %) 3600) :id (str (:route-id %) "_flow")}) flow-defs))
+  (map #(merge % {:vehsPerHour (* (:flow %) 3600) :id (str (:route-id %) "_flow")}) flow-defs))
 
 (defn generate-vehicles 
   ([route-id count grid-length car-interval]

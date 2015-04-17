@@ -10,7 +10,7 @@
 
 (def experiment-name (experiments.core/experiment-name "bandwidth"))
 
-(defn run-simulation [t_h t_v phase-length bw-window saturation-bw-threshold saturation-misses-count saturation-timeout speed sumo-mode]
+(defn run-simulation [flow_h flow_v phase-length bw-window saturation-bw-threshold saturation-misses-count saturation-timeout speed sumo-mode]
   (let [saturation-time (promise)
         saturation-timeout* (+ (quot (* saturation-timeout 1000) speed) 1000)
 
@@ -23,10 +23,10 @@
                                  {:id "r0/0_2" :edges "0/1to0/0 0/0tobottom0"}
                                  {:id "r0/0_3" :edges "1/0to0/0 0/0toleft0"}
                                  {:id "r0/0_4" :edges "bottom0to0/0 0/0to0/1"}]
-                        :flow-defs [{:route-id "r0/0_1" :throughput t_h}
-                                    {:route-id "r0/0_2" :throughput t_v}
-                                    {:route-id "r0/0_3" :throughput t_h}
-                                    {:route-id "r0/0_4" :throughput t_v}]
+                        :flow-defs [{:route-id "r0/0_1" :flow flow_h}
+                                    {:route-id "r0/0_2" :flow flow_v}
+                                    {:route-id "r0/0_3" :flow flow_h}
+                                    {:route-id "r0/0_4" :flow flow_v}]
                         :tls [{:id "0/0" :program-id "1" :phases [{:duration phase-length :state "rrrGGgrrrGGg"} {:duration phase-length :state "GGgrrrGGgrrr"}]}
                               {:id "0/1" :program-id "off"}
                               {:id "1/0" :program-id "off"}
@@ -34,7 +34,7 @@
         sumo-service (sumo/run-sumo event-service simulation-cfg width height sumo-mode 1000)
         timer-service (timer/run-timer event-service 1000 speed)
 
-        bw-low-limit (* saturation-bw-threshold 2 (+ t_v t_h))
+        bw-low-limit (* saturation-bw-threshold 2 (+ flow_v flow_h))
 
         stop-fn #(do
                   (service/stop timer-service)
@@ -106,7 +106,7 @@
         high 1
         max-delta 0.01
         func (fn [x] (nil? (run-simulation (* k x) x phase-length bw-window saturation-bw-threshold saturation-misses-count saturation-timeout speed sumo-mode)))
-        t_v_max (bisect low high max-delta func)
-        bandwidth (* 2 (+ k 1) t_v_max)]
+        flow_v_max (bisect low high max-delta func)
+        bandwidth (* 2 (+ k 1) flow_v_max)]
     (println bandwidth)
   ))
