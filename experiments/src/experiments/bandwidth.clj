@@ -72,6 +72,15 @@
    ["-h" "--saturation-bw-threshold th" "Saturation bandwidth threshold, e.g. 0.8 -> 80% of expected bandwidth"
     :default 0.8
     :parse-fn #(Double/parseDouble %)]
+   ["-r" "--ratio-min r" "Min flows ratio in iteration"
+    :default 0.02
+    :parse-fn #(Double/parseDouble %)]
+   ["-R" "--ratio-max R" "Max flows ratio in iteration"
+    :default 1.0
+    :parse-fn #(Double/parseDouble %)]
+   ["-e" "--ratio-step e" "Flows ratio step in iteration"
+    :default 0.01
+    :parse-fn #(Double/parseDouble %)]
    ["-s" "--speed n" "Speed-up coefficient (10 -> 10x speed-up)"
     :default 1
     :parse-fn #(Integer/parseInt %)]
@@ -110,11 +119,9 @@
   ))
 
 (defn -main [& args]
-  (let [options (:options (cli/parse-opts args cli-options))
-        ratio-min 0.02
-        ratio-max 1.0
-        ratio-step 0.01]
-    (with-open [w (io/writer (:output options))]
+  (let [{:keys [output ratio-min ratio-max ratio-step] :as options}
+          (:options (cli/parse-opts args cli-options))]
+    (with-open [w (io/writer output)]
       (doseq [ratio (range ratio-min (+ ratio-max ratio-step) ratio-step)]
         (.write w (str ratio "," (find-bandwidth ratio options) "\n"))
         (.flush w)))))
