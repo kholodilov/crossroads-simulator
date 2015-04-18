@@ -10,7 +10,7 @@
 
 (def experiment-name (experiments.core/experiment-name "bandwidth"))
 
-(defn run-simulation [flow_h flow_v phase-length bw-window saturation-bw-threshold saturation-misses-count saturation-timeout speed sumo-mode]
+(defn run-simulation [flow-h flow-v {:keys [phase-length bw-window saturation-bw-threshold saturation-misses-count saturation-timeout speed sumo-mode]}]
   (let [saturation-time (promise)
         saturation-timeout* (+ (quot (* saturation-timeout 1000) speed) 1000)
 
@@ -23,10 +23,10 @@
                                  {:id "r0/0_2" :edges "0/1to0/0 0/0tobottom0"}
                                  {:id "r0/0_3" :edges "1/0to0/0 0/0toleft0"}
                                  {:id "r0/0_4" :edges "bottom0to0/0 0/0to0/1"}]
-                        :flow-defs [{:route-id "r0/0_1" :flow flow_h}
-                                    {:route-id "r0/0_2" :flow flow_v}
-                                    {:route-id "r0/0_3" :flow flow_h}
-                                    {:route-id "r0/0_4" :flow flow_v}]
+                        :flow-defs [{:route-id "r0/0_1" :flow flow-h}
+                                    {:route-id "r0/0_2" :flow flow-v}
+                                    {:route-id "r0/0_3" :flow flow-h}
+                                    {:route-id "r0/0_4" :flow flow-v}]
                         :tls [{:id "0/0" :program-id "1" :phases [{:duration phase-length :state "rrrGGgrrrGGg"} {:duration phase-length :state "GGgrrrGGgrrr"}]}
                               {:id "0/1" :program-id "off"}
                               {:id "1/0" :program-id "off"}
@@ -34,7 +34,7 @@
         sumo-service (sumo/run-sumo event-service simulation-cfg width height sumo-mode 1000)
         timer-service (timer/run-timer event-service 1000 speed)
 
-        bw-low-limit (* saturation-bw-threshold 2 (+ flow_v flow_h))
+        bw-low-limit (* saturation-bw-threshold 2 (+ flow-v flow-h))
 
         stop-fn #(do
                   (service/stop timer-service)
@@ -98,15 +98,23 @@
         (do (println (str "func(" median ") - no saturation")) (bisect median high max-delta func))
         (do (println (str "func(" median ") - saturation")) (bisect low median max-delta func))))))
 
-(defn -main [& args]
-  (let [{:keys [output phase-length bw-window saturation-bw-threshold saturation-misses-count saturation-timeout speed sumo-mode]}
-          (:options (cli/parse-opts args cli-options))
-        k 0.5
-        low 0.1
-        high 1
+(defn find-bandwidth [flows-ratio options]
+  (println (str "### Finding maximal bandwidth for flows ration = " flows-ratio))
+  (let [flow-low 0.1
+        flow-high 1
         max-delta 0.01
-        func (fn [x] (nil? (run-simulation (* k x) x phase-length bw-window saturation-bw-threshold saturation-misses-count saturation-timeout speed sumo-mode)))
-        flow_v_max (bisect low high max-delta func)
-        bandwidth (* 2 (+ k 1) flow_v_max)]
-    (println bandwidth)
+        not-saturated-fn? (fn [x] (nil? (run-simulation (* flows-ratio x) x options)))
+        flow-v-max (bisect flow-low flow-high max-delta not-saturated-fn?)
+        bandwidth (* 2 (+ flows-ratio 1) flow-v-max)]
+    bandwidth
   ))
+
+(defn -main [& args]
+  (let [options (:options (cli/parse-opts args cli-options))
+        ratio-min 0.02
+        ratio-max 1.0
+        ratio-step 0.01]
+    (with-open [w (io/writer (:output options))]
+      (doseq [ratio (range ratio-min (+ ratio-max ratio-step) ratio-step)]
+        (.write w (str ratio "," (find-bandwidth ratio options) "\n"))
+        (.flush w)))))
