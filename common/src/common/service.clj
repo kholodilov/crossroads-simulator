@@ -10,3 +10,6 @@
 
 (defn build-service [& {:keys [conn stop-fn]}]
   (Service. conn stop-fn))
+
+(defn noop-service []
+  (build-service :stop-fn #()))

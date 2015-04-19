@@ -51,7 +51,7 @@
 
 (defn build-phase-length-controlled-fn [max-phase-length]
   (let [cc (CrossroadControl. )
-        model-args (object-array ["../model.RLSM.error.0.12.date.2013-10-08.mat" "" "RLSM"])
+        model-args (object-array ["../model.Kachmag.error.0.12.2015-04-18.mat" "" "RLSM"])
         model (vec (.calculateCrossroadModel cc 4 model-args))
         [mw_mfParams mw_mfCounts mw_fRules mw_modelParams] model
         phase-length-controlled-fn
