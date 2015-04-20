@@ -15,8 +15,8 @@
 (let [[mw_mfParams mw_mfCounts mw_fRules mw_modelParams] calcModelResult
       getPhaseLengthArgs
         (object-array [
-          (double-array [40 0 28 3])
-          20.0
+          (double-array [20     0    20     0])
+          30.0
           (double-array [1 0 1 0])
           mw_mfParams
           mw_mfCounts

@@ -44,7 +44,7 @@
                        :phase-length-update-mode "on-switch"
                        :phase-length-update-frequency nil}
         switchlights-service (if tls-adaptive
-                               (switchlights/run-switchlights event-service width height phase-length switchlights-params)
+                               (switchlights/run-switchlights event-service 1 1 phase-length switchlights-params)
                                (service/noop-service))
 
         timer-service (timer/run-timer event-service 1000 speed)
