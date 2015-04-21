@@ -15,15 +15,19 @@
    "on-switch"
       control/build-update-phase-length-on-switch-fn?})
 
-(defn run-switchlights [event-service width height max-phase-length {:keys [phase-length-mode phase-length-update-mode] :as params}]
-  (let [switch-events (atom (control/initial-switch-events width height max-phase-length))
+(defn run-switchlights [event-service width height max-phase-length {:keys [phase-length-mode phase-length-update-mode initial-queues initial-switch-events] :as params}]
+  (let [switch-events (atom (if (not (empty? initial-switch-events))
+                              initial-switch-events
+                              (control/random-switch-events width height max-phase-length)))
         phase-length-fn ((select-phase-length-fn-builder phase-length-mode) max-phase-length)
         update-phase-length-fn?
                         ((select-update-phase-length-fn-builder phase-length-update-mode) params)
         queues-statement (events/create-statement event-service "select * from QueueEvent.std:unique(x, y, direction)")
         generate-and-trigger-switch-events
           (fn [_]
-            (let [queues (events/pull-events event-service queues-statement)
+            (let [queues (if (not (empty? initial-queues))
+                            initial-queues
+                            (events/pull-events event-service queues-statement))
                   next-switch-events-fn (control/build-next-switch-events-fn queues phase-length-fn update-phase-length-fn?)] 
               (swap! switch-events next-switch-events-fn)
               (doseq [event @switch-events]

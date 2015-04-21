@@ -8,7 +8,7 @@
 (defn flip-direction [direction]
   (first (clojure.set/difference (set directions) (list direction))))
 
-(defn initial-switch-events [width height max-phase-length] 
+(defn random-switch-events [width height max-phase-length] 
     (for [x (crossroads/coord-range width)
           y (crossroads/coord-range height)]
       {:x x :y y :phase-time (rand-int max-phase-length) :phase-length max-phase-length :direction (rand-nth directions)}))
