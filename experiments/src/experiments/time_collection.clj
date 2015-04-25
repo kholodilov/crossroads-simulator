@@ -10,7 +10,7 @@
 
 (def experiment-name (experiments.core/experiment-name "time-collection"))
 
-(defn run-simulation [q1 q2 q3 q4 ph1 ph2 speed sumo-mode]
+(defn run-simulation [q1 q2 q3 q4 ph1 ph2 yellow-phase speed sumo-mode]
   (let [T (promise)
         width 2
         height 2
@@ -25,7 +25,7 @@
                                         {:route-id "r0/0_2" :count q2}
                                         {:route-id "r0/0_3" :count q3}
                                         {:route-id "r0/0_4" :count q4}]
-                        :tls [{:id "0/0" :program-id "1" :phases [{:duration ph1 :state "rrrGGgrrrGGg"} {:duration ph2 :state "GGgrrrGGgrrr"}]}
+                        :tls [{:id "0/0" :program-id "1" :phases [{:duration (- ph1 yellow-phase) :state "rrrGGgrrrGGg"} {:duration yellow-phase :state "rrrYYyrrrYYy"} {:duration (- ph2 yellow-phase) :state "GGgrrrGGgrrr"} {:duration yellow-phase :state "YYyrrrYYyrrr"}]}
                               {:id "0/1" :program-id "off"}
                               {:id "1/0" :program-id "off"}
                               {:id "1/1" :program-id "off"}])
@@ -47,7 +47,7 @@
             ;(println (str "STOP - time " (:t event)))
             (deliver T (:t event))))))
 
-    (let [Tmillis (deref T 10000 -1000)
+    (let [Tmillis (deref T 1000000 -1000)
           Tseconds (quot Tmillis 1000)]
       (stop-fn)
       Tseconds)
@@ -63,8 +63,10 @@
    ["-p" "--max-phase n" "Maximum phase length"
     :default 30
     :parse-fn #(Integer/parseInt %)]
-   ["-o" "--output file" "Output file name"
-    :default (str experiment-name ".csv")]
+   ["-y" "--yellow-phase n" "Yellow phase length"
+    :default 2
+    :parse-fn #(Integer/parseInt %)]
+   ["-o" "--console-output" "Output only to console"]
    ["-s" "--speed n" "Speed-up coefficient (10 -> 10x speed-up)"
     :default 1
     :parse-fn #(Integer/parseInt %)]
@@ -72,20 +74,25 @@
     :default :cli
     :parse-fn #(keyword %)]])
 
-(defn iteration [max-q max-phase speed sumo-mode]
+(defn iteration [{:keys [max-q max-phase yellow-phase speed sumo-mode]}]
   (let [qs (repeatedly 4 #(rand-int max-q))
-        phs (repeatedly 2 #(+ 1 (rand-int max-phase)))
+        phs (repeatedly 2 #(rand-int max-phase))
         params (vec (flatten [qs phs]))]
     (println (str "Params: " params))
-    (let [T (apply run-simulation (concat params [speed sumo-mode]))]
+    (let [T (if (>= (apply min phs) yellow-phase)
+              (apply run-simulation (concat params [yellow-phase speed sumo-mode]))
+              100000)]
       (clojure.string/join "," (conj params T)))))
 
 (defn -main [& args]
-  (let [{:keys [max-q max-phase iterations output speed sumo-mode]}
-          (:options (cli/parse-opts args cli-options))]
+  (let [{:keys [iterations console-output] :as options}
+          (:options (cli/parse-opts args cli-options))
+        output (if console-output
+                  System/out
+                  (str experiment-name ".csv"))]
     (with-open [w (io/writer output)]
       (doseq [i (range iterations)]
         (println (str "Iteration " i))
-        (.write w (iteration max-q max-phase speed sumo-mode))
+        (.write w (iteration options))
         (.write w "\n")
         (.flush w)))))
