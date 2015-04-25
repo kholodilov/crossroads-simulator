@@ -79,7 +79,7 @@
         phs (repeatedly 2 #(rand-int max-phase))
         params (vec (flatten [qs phs]))]
     (println (str "Params: " params))
-    (let [T (if (>= (apply min phs) yellow-phase)
+    (let [T (if (> (apply min phs) yellow-phase)
               (apply run-simulation (concat params [yellow-phase speed sumo-mode]))
               100000)]
       (clojure.string/join "," (conj params T)))))
